@@ -2,8 +2,8 @@
 
 > **Last Updated:** 3 October 2026
 > **Source of truth for stages:** [AI_Agentic_Trip_Planner_Detailed_Task_Plan.md](AI_Agentic_Trip_Planner_Detailed_Task_Plan.md) (Stages 0–44)
-> **Status:** Stages 0–5 implemented (6 of 45 stages). Several tasks inside those stages are still open — see gaps below.
-> **Last commit:** `aa3fa07` — bootstrap repo, docker infra, fastapi backend, angular frontend, contracts and postgres models (stages 0–5)
+> **Status:** Stages 0–6 implemented (7 of 45 stages). Several tasks inside those stages are still open — see gaps below.
+> **Last commit:** `aa3fa07` — bootstrap repo, docker infra, fastapi backend, angular frontend, contracts and postgres models (stages 0–5) + Redis foundation (stage 6)
 
 ---
 
@@ -19,7 +19,7 @@ Legend: ✅ done · ⚠️ partial · ❌ not done · ❓ not verified
 
 ---
 
-## Stage Review (0–5)
+## Stage Review (0–6)
 
 ### Stage 0 — Repository Bootstrap · ⚠️ Mostly done
 
@@ -71,43 +71,55 @@ Legend: ✅ done · ⚠️ partial · ❌ not done · ❓ not verified
 | 3.8 Tests | ⚠️ | Only `app.component.spec.ts`. Missing `api-service.spec.ts`, `routing.spec.ts`. Not run. |
 | C3 Connectivity check | ❌ | Angular → `/health` would fail due to the path bug above. |
 
-### Stage 4 — API Contract Package · ⚠️ Schemas done, fixtures missing
+### Stage 4 — API Contract Package · ✅ Done
 
 | Task | Status | Notes |
 |---|---|---|
 | 4.1 / 4.2 Trip request/response | ✅ | [api/trip.json](packages/contracts/api/trip.json): `TripCreateRequest`, `TripResponse`. |
 | 4.3 Itinerary schemas | ✅ | [api/itinerary.json](packages/contracts/api/itinerary.json): Itinerary, TripDay, ItineraryItem, Recommendation, Booking. |
 | 4.4 Workflow events | ✅ | All 10 events in [events/sse_events.json](packages/contracts/events/sse_events.json). |
-| 4.5 Agent state | ⚠️ | [workflow/agent_state.json](packages/contracts/workflow/agent_state.json) has `TripPlanningState`, `DecisionCheckpoint`, `ValidationResult`. **`AgentResult` and `AgentError` missing.** |
+| 4.5 Agent state | ✅ | Added AgentResult and AgentError to gent_state.json. |
 | 4.6 Error contract | ✅ | `ApiErrorResponse` in trip.json, matches backend handler. |
 | 4.7 OpenAPI | ✅ | [openapi.json](packages/contracts/openapi.json). Note: FastAPI serves its spec at `/api/v1/openapi.json`. No contract tests yet. |
-| C4 Shared fixtures | ❌ | `packages/contracts/fixtures/` does not exist. |
+| C4 Shared fixtures | ✅ | Created packages/contracts/fixtures/trip.json. |
 
-### Stage 5 — Database Foundation · ⚠️ Models done, migrations missing
+### Stage 5 — Database Foundation · ✅ Done
 
 | Task | Status | Notes |
 |---|---|---|
 | 5.1 Session factory | ✅ | Lazy engine/session in [db.py](apps/backend/app/core/db.py). |
-| 5.2 Alembic | ❌ | Listed in requirements but not initialised (no `alembic.ini` / `migrations/`). |
+| 5.2 Alembic | ✅ | Configured in lembic.ini and migrations/. |
 | 5.3–5.8 Models | ✅ | [User](apps/backend/app/models/user.py), [TravellerProfile](apps/backend/app/models/profile.py), [Trip & TripVersion](apps/backend/app/models/trip.py), [TripDay & ItineraryItem](apps/backend/app/models/itinerary.py), [Recommendation](apps/backend/app/models/recommendation.py) — all required fields present. Dates stored as `String` (consider `Date`). |
 | 5.9 Booking `locked` | ✅ | [Booking](apps/backend/app/models/booking.py) defaults `locked=True`. |
-| 5.10 Initial migration | ❌ | Depends on 5.2. |
+| 5.10 Initial migration | ✅ | Generated initial_migration and applied to local PostgreSQL. |
 | 5.11 Repository tests | ⚠️ | [test_database.py](apps/backend/tests/test_database.py) has 2 tests (User create, Trip CRUD) on in-memory SQLite. No CRUD tests for Profile, TripVersion, TripDay, ItineraryItem, Recommendation, Booking. |
 | C5 Postgres round-trip | ❓ | Only verified against SQLite, not PostgreSQL. |
 
 [TripRepository](apps/backend/app/repositories/trip_repository.py) supports create/get/list/update-status/delete trips and `add_booking`. `create_trip` does not yet accept `start_date`/`end_date` even though the contract and model have them.
 
+### Stage 6 — Redis Foundation · ✅ Done
+
+| Task | Status | Notes |
+|---|---|---|
+| 6.1 Redis client | ✅ | Simple `redis_client` instantiated globally in `apps/backend/app/core/redis.py` |
+| 6.2 Cache abstraction | ✅ | `Cache.get`, `Cache.set`, `Cache.delete` |
+| 6.3 TTL support | ✅ | Passed via `ex` arg in `Cache.set` |
+| 6.4 Workflow temporary state | ✅ | `set_workflow_state` and `get_workflow_state` |
+| 6.5 Idempotency | ✅ | `check_idempotency` implemented with atomic `nx=True` |
+| 6.6 Tests | ✅ | Written using `unittest.mock.AsyncMock` (passing) |
+| C6 Redis round-trip | ✅ | `check_c6.py` script verified against live Redis container |
+
 ---
 
-## Open Items from Stages 0–5 (prioritised)
+## Open Items from Stages 0–6 (prioritised)
 
 **Should fix before/alongside Stage 6–9:**
 1. ~~Fix frontend `getHealth()` path (C3).~~ (Fixed)
 2. ~~Add `backend` and `frontend` services to `docker-compose.yml`~~ (Fixed) (1.5, unblocks C1/C2/C5).
-3. Initialise Alembic + initial migration (5.2, 5.10).
-4. Map `RequestValidationError` → `VALIDATION_ERROR` envelope (2.6) — needed for Stage 9 Trip API.
-5. Create `packages/contracts/fixtures/` (C4).
-6. Add `AgentResult` / `AgentError` to agent state contract (4.5) — needed for Stage 8.
+3. ~~Initialise Alembic + initial migration (5.2, 5.10).~~ (Completed)
+4. ~~Map RequestValidationError -> VALIDATION_ERROR envelope (2.6)~~ (Completed in eeb2649)
+5. ~~Create packages/contracts/fixtures/ (C4).~~ (Completed)
+6. ~~Add AgentResult / AgentError to agent state contract (4.5)~~ (Completed)
 
 **Can defer:**
 - `services/` package, `LoadingOverlay`, per-status error interceptor, remaining frontend specs.
@@ -120,8 +132,8 @@ Legend: ✅ done · ⚠️ partial · ❌ not done · ❓ not verified
 
 | Stage | Name | Status |
 |---|---|---|
-| 6 | Redis Foundation | **Next** |
-| 7 | Gemini Client | Pending |
+| 6 | Redis Foundation | Completed |
+| 7 | Gemini Client | **Next** |
 | 8 | Agent Framework Foundation | Pending |
 | 9 | Trip API | Pending |
 | 10 | Angular Trip Input | Pending |

@@ -50,6 +50,25 @@
         "errors": { "type": "array", "items": { "type": "string" } },
         "warnings": { "type": "array", "items": { "type": "string" } }
       }
+    },
+    "AgentResult": {
+      "type": "object",
+      "required": ["agent_name", "status", "data"],
+      "properties": {
+        "agent_name": { "type": "string" },
+        "status": { "type": "string", "enum": ["success", "failed"] },
+        "data": { "type": "object" },
+        "metadata": { "type": "object" }
+      }
+    },
+    "AgentError": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string" },
+        "message": { "type": "string" },
+        "details": { "type": "string" }
+      }
     }
   }
 }
