@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AgentStateContracts",
+  "definitions": {
+    "TripPlanningState": {
+      "type": "object",
+      "required": ["trip_id", "workflow_status"],
+      "properties": {
+        "trip_id": { "type": "string" },
+        "user_profile": { "type": "object" },
+        "trip_constraints": { "type": "object" },
+        "research_results": { "type": "object" },
+        "recommendations": { "type": "array", "items": { "type": "object" } },
+        "itinerary": { "type": "object" },
+        "bookings": { "type": "array", "items": { "type": "object" } },
+        "locked_items": { "type": "array", "items": { "type": "string" } },
+        "rejected_items": { "type": "array", "items": { "type": "string" } },
+        "pending_decision": { "$ref": "#/definitions/DecisionCheckpoint" },
+        "validation_results": { "$ref": "#/definitions/ValidationResult" },
+        "workflow_status": { "type": "string", "enum": ["idle", "running", "paused_checkpoint", "completed", "failed"] }
+      }
+    },
+    "DecisionCheckpoint": {
+      "type": "object",
+      "required": ["checkpoint_id", "checkpoint_type", "question", "options"],
+      "properties": {
+        "checkpoint_id": { "type": "string" },
+        "checkpoint_type": { "type": "string", "enum": ["USER_DECISION", "DAY_TRIP_VS_STAY", "CITY_SELECTION", "FULL_DAY_EXCURSION"] },
+        "question": { "type": "string" },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "label"],
+            "properties": {
+              "id": { "type": "string" },
+              "label": { "type": "string" },
+              "description": { "type": "string" },
+              "recommended": { "type": "boolean", "default": false }
+            }
+          }
+        }
+      }
+    },
+    "ValidationResult": {
+      "type": "object",
+      "required": ["valid"],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "errors": { "type": "array", "items": { "type": "string" } },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

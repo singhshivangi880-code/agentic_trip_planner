@@ -1,0 +1,149 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AI Agentic Trip Planner API",
+    "version": "1.0.0",
+    "description": "API contract for AI-Powered Agentic Trip Planner backend and frontend integration."
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check endpoint",
+        "responses": {
+          "200": {
+            "description": "System operational status",
+            "content": {
+              "application/json": {
+                "example": { "status": "ok" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trips": {
+      "post": {
+        "summary": "Create a new trip request",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "./api/trip.json#/definitions/TripCreateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Trip created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "./api/trip.json#/definitions/TripResponse" }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List all trips for the authenticated user",
+        "responses": {
+          "200": {
+            "description": "List of trips",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "./api/trip.json#/definitions/TripResponse" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{trip_id}": {
+      "get": {
+        "summary": "Get trip details by ID",
+        "parameters": [
+          { "name": "trip_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trip detail",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "./api/trip.json#/definitions/TripResponse" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update trip parameters",
+        "parameters": [
+          { "name": "trip_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated trip detail"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete trip",
+        "parameters": [
+          { "name": "trip_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "204": { "description": "Trip deleted" }
+        }
+      }
+    },
+    "/api/v1/trips/{trip_id}/plan": {
+      "post": {
+        "summary": "Initiate full planning workflow",
+        "parameters": [
+          { "name": "trip_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "202": { "description": "Planning started" }
+        }
+      }
+    },
+    "/api/v1/trips/{trip_id}/replan": {
+      "post": {
+        "summary": "Request incremental replanning",
+        "parameters": [
+          { "name": "trip_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Replanning accepted" }
+        }
+      }
+    },
+    "/api/v1/trips/{trip_id}/decisions": {
+      "post": {
+        "summary": "Submit human-in-the-loop checkpoint decision",
+        "parameters": [
+          { "name": "trip_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Decision recorded and workflow resumed" }
+        }
+      }
+    },
+    "/api/v1/trips/{trip_id}/workflow/stream": {
+      "get": {
+        "summary": "Stream workflow progress via SSE",
+        "parameters": [
+          { "name": "trip_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Server-Sent Events stream",
+            "content": { "text/event-stream": {} }
+          }
+        }
+      }
+    }
+  }
+}

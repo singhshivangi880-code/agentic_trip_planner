@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WorkflowEvents",
+  "definitions": {
+    "WorkflowEvent": {
+      "type": "object",
+      "required": ["event_type", "workflow_id", "timestamp"],
+      "properties": {
+        "event_type": {
+          "type": "string",
+          "enum": [
+            "workflow_started",
+            "agent_started",
+            "agent_completed",
+            "agent_failed",
+            "research_started",
+            "research_completed",
+            "checkpoint_required",
+            "plan_updated",
+            "workflow_completed",
+            "workflow_failed"
+          ]
+        },
+        "workflow_id": { "type": "string" },
+        "agent_name": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "payload": { "type": "object" },
+        "error": { "type": "string" }
+      }
+    }
+  }
+}

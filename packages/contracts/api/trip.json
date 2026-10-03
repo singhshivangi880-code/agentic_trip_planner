@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TripContracts",
+  "definitions": {
+    "TripCreateRequest": {
+      "type": "object",
+      "required": ["destination", "duration_days"],
+      "properties": {
+        "origin": { "type": "string" },
+        "destination": { "type": "string" },
+        "start_date": { "type": "string", "format": "date" },
+        "end_date": { "type": "string", "format": "date" },
+        "duration_days": { "type": "integer", "minimum": 1 },
+        "nationality": { "type": "string" },
+        "preferences": {
+          "type": "object",
+          "properties": {
+            "budget": { "type": "string", "enum": ["budget", "moderate", "luxury"] },
+            "pace": { "type": "string", "enum": ["relaxed", "balanced", "packed"] },
+            "interests": { "type": "array", "items": { "type": "string" } },
+            "group_composition": { "type": "string" }
+          }
+        }
+      }
+    },
+    "TripResponse": {
+      "type": "object",
+      "required": ["id", "destination", "status", "created_at"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "user_id": { "type": "string" },
+        "profile_id": { "type": "string" },
+        "title": { "type": "string" },
+        "origin": { "type": "string" },
+        "destination": { "type": "string" },
+        "start_date": { "type": "string", "format": "date" },
+        "end_date": { "type": "string", "format": "date" },
+        "duration_days": { "type": "integer" },
+        "status": { "type": "string", "enum": ["draft", "planning", "completed", "archived"] },
+        "workflow_status": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ApiErrorResponse": {
+      "type": "object",
+      "required": ["error"],
+      "properties": {
+        "error": {
+          "type": "object",
+          "required": ["code", "message", "request_id"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" },
+            "request_id": { "type": "string" },
+            "details": { "type": "array", "items": { "type": "object" } }
+          }
+        }
+      }
+    }
+  }
+}
