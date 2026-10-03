@@ -2,8 +2,8 @@
 
 > **Last Updated:** 3 October 2026
 > **Source of truth for stages:** [AI_Agentic_Trip_Planner_Detailed_Task_Plan.md](AI_Agentic_Trip_Planner_Detailed_Task_Plan.md) (Stages 0–44)
-> **Status:** Stages 0–6 implemented (7 of 45 stages). Several tasks inside those stages are still open — see gaps below.
-> **Last commit:** `aa3fa07` — bootstrap repo, docker infra, fastapi backend, angular frontend, contracts and postgres models (stages 0–5) + Redis foundation (stage 6)
+> **Status:** Stages 0–9 implemented (10 of 45 stages). Several tasks inside those stages are still open — see gaps below.
+> **Last commit:** `aa3fa07` — bootstrap repo, docker infra, fastapi backend, angular frontend, contracts and postgres models (stages 0–5) + Redis foundation (stage 6) + Gemini Client (stage 7) + Agent Framework (stage 8) + Trip API (stage 9)
 
 ---
 
@@ -19,7 +19,7 @@ Legend: ✅ done · ⚠️ partial · ❌ not done · ❓ not verified
 
 ---
 
-## Stage Review (0–6)
+## Stage Review (0–9)
 
 ### Stage 0 — Repository Bootstrap · ⚠️ Mostly done
 
@@ -109,9 +109,47 @@ Legend: ✅ done · ⚠️ partial · ❌ not done · ❓ not verified
 | 6.6 Tests | ✅ | Written using `unittest.mock.AsyncMock` (passing) |
 | C6 Redis round-trip | ✅ | `check_c6.py` script verified against live Redis container |
 
+### Stage 7 — Gemini Client · ✅ Done
+
+| Task | Status | Notes |
+|---|---|---|
+| 7.1 Gemini configuration | ✅ | Handled via `GEMINI_MODEL_FAST` and `GEMINI_MODEL_REASONING` env variables in `GeminiClient` |
+| 7.2 Gemini client wrapper | ✅ | `GeminiClient` implemented in `agents/common/gemini/client.py` |
+| 7.3 Structured output | ✅ | Handled via `response_schema` directly into the `genai` sdk client |
+| 7.4 Retry policy | ✅ | Implemented simple retry loop with exponential backoff and `asyncio.sleep` |
+| 7.5 Timeout policy | ✅ | Passed into standard `asyncio.timeout` wrapper |
+| 7.6 Error mapping | ✅ | Catch generic/google exceptions and map to `GeminiAPIError` |
+| 7.7 Model abstraction | ✅ | Abstraction allows toggling `use_reasoning=True` on generation |
+| 7.8 Gemini tests | ✅ | Mock class `MockGeminiClient` with simple schema fallback implemented & tested |
+
+### Stage 8 — Agent Framework Foundation · ✅ Done
+
+| Task | Status | Notes |
+|---|---|---|
+| 8.1 Agent base interface | ✅ | `BaseAgent` class with `execute` signature |
+| 8.2 Agent result | ✅ | `AgentResult` Pydantic model |
+| 8.3 Workflow state | ✅ | `TripPlanningState` typed dict with `Annotated` lists |
+| 8.4 LangGraph workflow skeleton | ✅ | Added dummy `trip_manager` to `agents/workflow/graph.py` |
+| 8.5 Agent handoff mechanism | ✅ | Handled natively by LangGraph |
+| 8.6 Failure state | ✅ | `WorkflowStatus` enum included |
+| 8.7 Retry state | ✅ | Included in `TripPlanningState` dict |
+| C8 Connectivity Check | ✅ | Verified passing state between two dummy agents in pytest |
+
+### Stage 9 — Trip API · ✅ Done
+
+| Task | Status | Notes |
+|---|---|---|
+| 9.1 POST trip | ✅ | Implemented `/api/v1/trips` mapped to repository |
+| 9.2 GET trip | ✅ | Implemented `/api/v1/trips/{trip_id}` |
+| 9.3 PATCH trip | ✅ | Implemented `/api/v1/trips/{trip_id}` (updates status) |
+| 9.4 Trip validation | ✅ | Enforced using Pydantic `@model_validator` on date order & standard types |
+| 9.5 Trip repo integration| ✅ | Routes wired fully to `TripRepository` using FastAPI `Depends` |
+| 9.6 API tests | ✅ | Created `test_api_trips.py` for all success/failure scenarios |
+| C9 Connectivity Check | ✅ | Verified through the local API tests using `httpx.AsyncClient` mapping |
+
 ---
 
-## Open Items from Stages 0–6 (prioritised)
+## Open Items from Stages 0–9 (prioritised)
 
 **Should fix before/alongside Stage 6–9:**
 1. ~~Fix frontend `getHealth()` path (C3).~~ (Fixed)
@@ -133,10 +171,10 @@ Legend: ✅ done · ⚠️ partial · ❌ not done · ❓ not verified
 | Stage | Name | Status |
 |---|---|---|
 | 6 | Redis Foundation | Completed |
-| 7 | Gemini Client | **Next** |
-| 8 | Agent Framework Foundation | Pending |
-| 9 | Trip API | Pending |
-| 10 | Angular Trip Input | Pending |
+| 7 | Gemini Client | Completed |
+| 8 | Agent Framework Foundation | Completed |
+| 9 | Trip API | Completed |
+| 10 | Angular Trip Input | **Next** |
 | 11 | Intent Agent | Pending |
 | 12 | Traveller Profile Agent | Pending |
 | 13 | Research Tool Interfaces | Pending |
