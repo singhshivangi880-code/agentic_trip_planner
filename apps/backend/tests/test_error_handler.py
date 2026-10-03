@@ -1,12 +1,17 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from app.core.exceptions import AppException, app_exception_handler, generic_exception_handler
+from pydantic import BaseModel
+from app.core.exceptions import AppException, register_exception_handlers
 from app.core.logging import log_requests_middleware
 
 app = FastAPI()
 app.middleware("http")(log_requests_middleware)
-app.add_exception_handler(AppException, app_exception_handler)
-app.add_exception_handler(Exception, generic_exception_handler)
+register_exception_handlers(app)
+
+
+class Payload(BaseModel):
+    destination: str
+    duration_days: int
 
 
 @app.get("/custom-error")
@@ -17,6 +22,11 @@ def trigger_custom_error():
 @app.get("/generic-error")
 def trigger_generic_error():
     raise RuntimeError("Unexpected failure")
+
+
+@app.post("/validate")
+def validate(payload: Payload):
+    return payload
 
 
 client = TestClient(app, raise_server_exceptions=False)
@@ -37,3 +47,20 @@ def test_generic_exception():
     data = response.json()
     assert data["error"]["code"] == "INTERNAL_SERVER_ERROR"
     assert "request_id" in data["error"]
+
+
+def test_validation_error_uses_envelope():
+    response = client.post("/validate", json={"destination": "Japan"}, headers={"X-Request-ID": "req-123"})
+    assert response.status_code == 422
+    error = response.json()["error"]
+    assert error["code"] == "VALIDATION_ERROR"
+    assert error["request_id"] == "req-123"
+    assert any(d["field"].endswith("duration_days") for d in error["details"])
+
+
+def test_not_found_uses_envelope():
+    response = client.get("/does-not-exist")
+    assert response.status_code == 404
+    error = response.json()["error"]
+    assert error["code"] == "NOT_FOUND"
+    assert "request_id" in error

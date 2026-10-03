@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Integer, Boolean, Float, ForeignKey, JSON
+from sqlalchemy import Column, String, Integer, Boolean, Date, Float, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from app.core.db import Base
 
@@ -10,7 +10,7 @@ class TripDay(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     trip_id = Column(String, ForeignKey("trips.id"), nullable=False)
     day_number = Column(Integer, nullable=False)
-    date = Column(String, nullable=True)
+    date = Column(Date, nullable=True)
     theme = Column(String, nullable=True)
     city = Column(String, nullable=True)
 

@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Float, Boolean, ForeignKey
+from sqlalchemy import Column, String, Float, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.db import Base
 
@@ -12,8 +12,8 @@ class Booking(Base):
     type = Column(String, nullable=False) # flight, train, bus, hotel, tour, ticket, reservation
     title = Column(String, nullable=False)
     provider = Column(String, nullable=True)
-    start_time = Column(String, nullable=True)
-    end_time = Column(String, nullable=True)
+    start_time = Column(DateTime, nullable=True)
+    end_time = Column(DateTime, nullable=True)
     location = Column(String, nullable=True)
     reference_number = Column(String, nullable=True)
     cost = Column(Float, nullable=True)

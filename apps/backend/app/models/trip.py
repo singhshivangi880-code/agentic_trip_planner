@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Integer, DateTime, JSON, ForeignKey
+from sqlalchemy import Column, String, Integer, Date, DateTime, JSON, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.db import Base
 
@@ -14,8 +14,8 @@ class Trip(Base):
     title = Column(String, nullable=False)
     origin = Column(String, nullable=True)
     destination = Column(String, nullable=False)
-    start_date = Column(String, nullable=True)
-    end_date = Column(String, nullable=True)
+    start_date = Column(Date, nullable=True)
+    end_date = Column(Date, nullable=True)
     duration_days = Column(Integer, default=1)
     status = Column(String, default="draft")
     preferences = Column(JSON, default=dict)
