@@ -1,10 +1,18 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from app.core.config import settings
 from app.core.logging import setup_logging, log_requests_middleware
 from app.core.exceptions import register_exception_handlers
 from app.core.health import check_dependencies
 from app.api.v1.router import api_router
+
+# Try to initialize tracing from our common package
+try:
+    from agents.common.tracing.setup import init_tracing
+    init_tracing(service_name="trip_planner_backend")
+except ImportError:
+    pass
 
 setup_logging()
 
@@ -12,6 +20,8 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
 )
+
+FastAPIInstrumentor.instrument_app(app)
 
 app.middleware("http")(log_requests_middleware)
 

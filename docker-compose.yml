@@ -66,6 +66,7 @@ services:
     environment:
       - DATABASE_URL=postgresql+psycopg2://user:password@postgres/tripplanner
       - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
 
   frontend:
     build: apps/frontend

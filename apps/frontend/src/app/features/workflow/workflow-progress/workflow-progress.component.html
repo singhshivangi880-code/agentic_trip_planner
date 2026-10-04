@@ -1,0 +1,30 @@
+<div class="workflow-container">
+  <h3>Generating your trip...</h3>
+  
+  <div class="agent-list">
+    <div *ngFor="let agent of agents" class="agent-item" [ngClass]="agent.status">
+      <div class="status-icon">
+        <span *ngIf="agent.status === 'pending'">🕒</span>
+        <span *ngIf="agent.status === 'running'" class="spinner">🔄</span>
+        <span *ngIf="agent.status === 'completed'">✅</span>
+        <span *ngIf="agent.status === 'failed'">❌</span>
+      </div>
+      <div class="agent-info">
+        <strong>{{ agent.name }}</strong>
+        <span>{{ agent.message }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="checkpointRequired" class="checkpoint-card">
+    <h4>Question for you:</h4>
+    <p>{{ checkpointData?.question }}</p>
+    <div class="options">
+      <button *ngFor="let opt of checkpointData?.options">{{ opt }}</button>
+    </div>
+  </div>
+
+  <div *ngIf="workflowCompleted" class="success-message">
+    🎉 Your itinerary is ready!
+  </div>
+</div>

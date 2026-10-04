@@ -38,5 +38,16 @@ class BaseAgent:
     """Base interface for all agents."""
     name: str
 
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if hasattr(cls, "execute") and callable(cls.execute):
+            original_execute = cls.execute
+            
+            try:
+                from agents.common.tracing.decorators import trace_agent
+                cls.execute = trace_agent(name=cls.name)(original_execute)
+            except ImportError:
+                pass
+
     async def execute(self, state: TripPlanningState) -> AgentResult:
         raise NotImplementedError

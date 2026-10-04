@@ -1,0 +1,44 @@
+.workflow-container {
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+.agent-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+.agent-info {
+  display: flex;
+  flex-direction: column;
+  margin-left: 10px;
+}
+.spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+.checkpoint-card {
+  margin-top: 20px;
+  padding: 15px;
+  background: #fff3cd;
+  border: 1px solid #ffeeba;
+  border-radius: 4px;
+}
+.options button {
+  margin-right: 10px;
+  padding: 5px 15px;
+}
+.success-message {
+  margin-top: 20px;
+  padding: 10px;
+  background: #d4edda;
+  color: #155724;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: bold;
+}
