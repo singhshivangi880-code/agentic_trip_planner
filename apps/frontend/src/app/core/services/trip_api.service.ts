@@ -29,8 +29,10 @@ export interface TripResponse {
 export class TripApiService {
   private api = inject(ApiClientService);
 
+  private http = inject(import('@angular/common/http').HttpClient);
+
   getHealth(): Observable<{ status: string }> {
-    return this.api.get<{ status: string }>('/health');
+    return this.http.get<{ status: string }>('/health');
   }
 
   createTrip(payload: TripCreatePayload): Observable<TripResponse> {

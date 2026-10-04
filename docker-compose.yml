@@ -52,6 +52,29 @@ services:
     networks:
       - trip-planner-net
 
+  backend:
+    build: apps/backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - trip-planner-net
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://user:password@postgres/tripplanner
+      - REDIS_URL=redis://redis:6379/0
+
+  frontend:
+    build: apps/frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - trip-planner-net
 networks:
   trip-planner-net:
     driver: bridge
@@ -59,3 +82,4 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+

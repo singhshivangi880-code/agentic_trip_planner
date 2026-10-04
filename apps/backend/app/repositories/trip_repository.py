@@ -1,3 +1,4 @@
+from datetime import date
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from app.models.trip import Trip, TripVersion
@@ -9,13 +10,30 @@ class TripRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_trip(self, destination: str, duration_days: int, origin: Optional[str] = None, title: Optional[str] = None, preferences: Optional[dict] = None) -> Trip:
+    def create_trip(
+        self,
+        destination: str,
+        duration_days: Optional[int] = None,
+        origin: Optional[str] = None,
+        title: Optional[str] = None,
+        preferences: Optional[dict] = None,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        user_id: Optional[str] = None,
+        profile_id: Optional[str] = None,
+    ) -> Trip:
+        if duration_days is None:
+            duration_days = (end_date - start_date).days + 1 if start_date and end_date else 1
         trip = Trip(
             title=title or f"Trip to {destination}",
             destination=destination,
             duration_days=duration_days,
             origin=origin,
             preferences=preferences or {},
+            start_date=start_date,
+            end_date=end_date,
+            user_id=user_id,
+            profile_id=profile_id,
         )
         self.db.add(trip)
         self.db.commit()
