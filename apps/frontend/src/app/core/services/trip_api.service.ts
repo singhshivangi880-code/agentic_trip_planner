@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { ApiClientService } from './api_client.service';
 import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 export interface TripCreatePayload {
   origin?: string;
@@ -29,7 +30,7 @@ export interface TripResponse {
 export class TripApiService {
   private api = inject(ApiClientService);
 
-  private http = inject(import('@angular/common/http').HttpClient);
+  private http = inject(HttpClient);
 
   getHealth(): Observable<{ status: string }> {
     return this.http.get<{ status: string }>('/health');
