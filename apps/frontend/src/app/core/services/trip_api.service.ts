@@ -20,8 +20,18 @@ export interface TripResponse {
   id: string;
   title: string;
   destination: string;
+  origin?: string;
+  start_date?: string;
+  end_date?: string;
   duration_days: number;
   status: string;
+  workflow_status?: string;
+  preferences?: {
+    budget?: string;
+    pace?: string;
+    interests?: string[];
+    group_composition?: string;
+  };
 }
 
 @Injectable({
@@ -42,5 +52,17 @@ export class TripApiService {
 
   getTrip(tripId: string): Observable<TripResponse> {
     return this.api.get<TripResponse>(`/trips/${tripId}`);
+  }
+
+  submitDecision(tripId: string, payload: { decision_id: string; selected_option: string; context?: string }): Observable<any> {
+    return this.api.post<{ status: string; message: string }>(`/trips/${tripId}/decisions`, payload);
+  }
+
+  createShare(tripId: string): Observable<{ token: string; expires_at: string }> {
+    return this.api.post<{ token: string; expires_at: string }>('/share/', { trip_id: tripId });
+  }
+
+  agentChat(payload: { message: string; history?: any[]; current_trip?: any; destination?: string; origin?: string; days?: number }): Observable<any> {
+    return this.api.post<any>('/agent/chat', payload);
   }
 }

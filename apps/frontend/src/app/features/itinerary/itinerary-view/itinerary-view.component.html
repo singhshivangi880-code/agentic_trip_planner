@@ -1,0 +1,58 @@
+<div class="itinerary-container" *ngIf="itinerary">
+  
+  <div class="itinerary-header">
+    <h2>Your Custom Itinerary</h2>
+    <div class="actions" *ngIf="!readonly">
+      <button class="btn-undo" (click)="undoRequest.emit()">↩ Undo Last Change</button>
+      <button class="btn-map">🗺️ View Map</button> <!-- Map integration placeholder -->
+    </div>
+  </div>
+
+  <div class="day-list">
+    <div class="day-card" *ngFor="let day of itinerary.days">
+      
+      <div class="day-header">
+        <h3>Day {{ day.day_index }}: {{ day.date | date:'longDate' }}</h3>
+        <span class="theme-badge">{{ day.theme_or_area }}</span>
+      </div>
+
+      <div class="item-list">
+        <div class="item-card" *ngFor="let item of day.items" [class.locked]="item.is_locked">
+          <div class="item-time">
+            <span class="time">{{ item.start_time }}</span>
+            <span class="duration">to {{ item.end_time }}</span>
+          </div>
+          
+          <div class="item-content">
+            <div class="item-title-row">
+              <h4>{{ item.title }}</h4>
+              <span class="type-badge">{{ item.item_type }}</span>
+            </div>
+            
+            <p class="location">📍 {{ item.location }}</p>
+            <p class="description">{{ item.description }}</p>
+            <p class="booking-ref" *ngIf="item.booking_ref">🎫 Ref: {{ item.booking_ref }}</p>
+          </div>
+
+          <div class="item-actions" *ngIf="!readonly">
+            <button class="action-btn" (click)="onToggleLock(item)" [title]="item.is_locked ? 'Unlock' : 'Lock'">
+              {{ item.is_locked ? '🔒' : '🔓' }}
+            </button>
+            <ng-container *ngIf="!item.is_locked">
+              <button class="action-btn" (click)="onReplace(day.day_index, item)" title="Replace">🔄</button>
+              <button class="action-btn remove" (click)="onRemove(day.day_index, item)" title="Remove">❌</button>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<div class="empty-state" *ngIf="!itinerary || !itinerary.days || !itinerary.days.length">
+  <div class="empty-icon">🤖</div>
+  <h3>Multi-Agent Synthesis in Progress</h3>
+  <p>The AI agents (Intent, Traveler Profile, Recommendation, and Itinerary) are curating authentic landmarks, dining spots, and optimal daily timings for your trip.</p>
+  <p class="empty-hint">Check the <strong>Agent Workflow</strong> tab to watch the live orchestration stream.</p>
+</div>

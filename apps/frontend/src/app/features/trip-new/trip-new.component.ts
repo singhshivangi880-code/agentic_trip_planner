@@ -1,139 +1,209 @@
-import { Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Component, inject, OnInit, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TripApiService, TripCreatePayload } from '../../core/services/trip_api.service';
+
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  validation?: {
+    is_valid: boolean;
+    flags?: string[];
+    suggestions?: string[];
+  };
+  tripData?: {
+    origin?: string;
+    destination?: string;
+    duration_days?: number;
+    start_date?: string;
+    end_date?: string;
+    pace?: string;
+    budget?: string;
+    interests?: string[];
+  };
+  showCard?: boolean;
+  suggestedReplies?: string[];
+}
 
 @Component({
   selector: 'app-trip-new',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule],
-  template: `
-    <div class="card" style="max-width: 600px; margin: 2rem auto; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-      <h2>Plan Your Next Trip</h2>
-      <p style="color: #94a3b8; margin-bottom: 2rem;">Enter where you want to go and what you love.</p>
-
-      <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        <div style="margin-bottom: 1rem;">
-          <label style="display: block; margin-bottom: 0.5rem;">Origin</label>
-          <input type="text" formControlName="origin" style="width: 100%; padding: 0.5rem;" placeholder="e.g. Pune">
-        </div>
-
-        <div style="margin-bottom: 1rem;">
-          <label style="display: block; margin-bottom: 0.5rem;">Destination*</label>
-          <input type="text" formControlName="destination" style="width: 100%; padding: 0.5rem;" placeholder="e.g. Japan">
-          <div *ngIf="form.get('destination')?.invalid && form.get('destination')?.touched" style="color: red; font-size: 0.8rem; margin-top: 0.25rem;">
-            Destination is required.
-          </div>
-        </div>
-
-        <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-          <div style="flex: 1;">
-            <label style="display: block; margin-bottom: 0.5rem;">Start Date*</label>
-            <input type="date" formControlName="startDate" style="width: 100%; padding: 0.5rem;">
-          </div>
-          <div style="flex: 1;">
-            <label style="display: block; margin-bottom: 0.5rem;">End Date*</label>
-            <input type="date" formControlName="endDate" style="width: 100%; padding: 0.5rem;">
-          </div>
-        </div>
-        <div *ngIf="form.errors?.['dateRange']" style="color: red; font-size: 0.8rem; margin-bottom: 1rem;">
-            End date must be after start date.
-        </div>
-
-        <div style="margin-bottom: 1rem;">
-          <label style="display: block; margin-bottom: 0.5rem;">Budget</label>
-          <select formControlName="budget" style="width: 100%; padding: 0.5rem;">
-            <option value="">Any</option>
-            <option value="budget">Budget</option>
-            <option value="moderate">Moderate</option>
-            <option value="luxury">Luxury</option>
-          </select>
-        </div>
-
-        <div style="margin-bottom: 1rem;">
-          <label style="display: block; margin-bottom: 0.5rem;">Pace</label>
-          <select formControlName="pace" style="width: 100%; padding: 0.5rem;">
-            <option value="">Any</option>
-            <option value="relaxed">Relaxed</option>
-            <option value="balanced">Balanced</option>
-            <option value="packed">Packed</option>
-          </select>
-        </div>
-
-        <div style="margin-bottom: 2rem;">
-          <label style="display: block; margin-bottom: 0.5rem;">Interests (comma separated)</label>
-          <input type="text" formControlName="interests" style="width: 100%; padding: 0.5rem;" placeholder="food, history, nature">
-        </div>
-
-        <div *ngIf="error()" style="color: red; margin-bottom: 1rem; font-size: 0.9rem;">{{ error() }}</div>
-
-        <button type="submit" [disabled]="form.invalid || submitting()" style="padding: 0.75rem 1.5rem; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">
-          {{ submitting() ? 'Submitting...' : 'Create Trip' }}
-        </button>
-      </form>
-    </div>
-  `,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './trip-new.component.html',
+  styleUrls: ['./trip-new.component.css']
 })
-export class TripNewComponent {
-  private fb = inject(FormBuilder);
+export class TripNewComponent implements OnInit, AfterViewChecked {
+  @ViewChild('scrollContainer') private scrollContainer?: ElementRef;
+  @ViewChild('chatInput') private chatInput?: ElementRef;
+
   private tripApi = inject(TripApiService);
   private router = inject(Router);
 
-  submitting = signal(false);
-  error = signal<string | null>(null);
+  userInput = '';
+  isThinking = false;
+  generatingTrip = false;
+  
+  currentWorkingTrip: any = {
+    origin: '',
+    destination: '',
+    duration_days: 7,
+    pace: 'balanced',
+    budget: 'moderate',
+    interests: []
+  };
 
-  form = this.fb.group({
-    origin: [''],
-    destination: ['', Validators.required],
-    startDate: ['', Validators.required],
-    endDate: ['', Validators.required],
-    budget: [''],
-    pace: [''],
-    interests: [''],
-  }, { validators: this.dateRangeValidator });
-
-  dateRangeValidator(control: AbstractControl): ValidationErrors | null {
-    const start = control.get('startDate')?.value;
-    const end = control.get('endDate')?.value;
-    if (start && end && new Date(start) > new Date(end)) {
-      return { dateRange: true };
+  messages: ChatMessage[] = [
+    {
+      role: 'assistant',
+      content: `👋 **Welcome to your AI Travel Co-Pilot!**\n\nWhere are you dreaming of travelling to? Tell me your thoughts freely—where you'd like to go, how many days, where you're departing from, or the vibe you're imagining (e.g. *"5 days in United States"*, *"14 days in Japan"*, or *"7 days in Paris"*).\n\nI will check location feasibility, flag any typos, and craft an authentic day-by-day plan with you.`,
+      suggestedReplies: [
+        '5 days in United States',
+        '14 days in Japan',
+        '7 days in Paris',
+        'Test typo check (from "pube")'
+      ]
     }
-    return null;
+  ];
+
+  ngOnInit(): void {}
+
+  ngAfterViewChecked(): void {
+    this.scrollToBottom();
   }
 
-  onSubmit() {
-    if (this.form.invalid) return;
+  private scrollToBottom(): void {
+    if (this.scrollContainer) {
+      try {
+        this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
+      } catch (err) {}
+    }
+  }
 
-    this.submitting.set(true);
-    this.error.set(null);
+  onEnterPress(event: Event): void {
+    const keyEvent = event as KeyboardEvent;
+    if (!keyEvent.shiftKey) {
+      event.preventDefault();
+      this.submitMessage();
+    }
+  }
 
-    const val = this.form.value;
-    
-    // ponytail: derive duration_days since it's required by backend, one line logic
-    const durationDays = Math.max(1, Math.ceil((new Date(val.endDate!).getTime() - new Date(val.startDate!).getTime()) / 86400000));
+  sendUserMessage(text: string): void {
+    this.userInput = text;
+    this.submitMessage();
+  }
+
+  applySuggestion(sug: string): void {
+    this.userInput = `Yes, I mean ${sug}.`;
+    this.submitMessage();
+  }
+
+  submitMessage(): void {
+    const text = this.userInput.trim();
+    if (!text || this.isThinking) return;
+
+    // Add user message to UI
+    this.messages.push({
+      role: 'user',
+      content: text
+    });
+    this.userInput = '';
+    this.isThinking = true;
+
+    const historyPayload = this.messages.map(m => ({
+      role: m.role,
+      content: m.content
+    }));
+
+    this.tripApi.agentChat({
+      message: text,
+      history: historyPayload,
+      current_trip: this.currentWorkingTrip
+    }).subscribe({
+      next: (res) => {
+        this.isThinking = false;
+
+        // Update working trip state if agent extracted new data
+        if (res.extracted_trip) {
+          if (res.extracted_trip.origin) this.currentWorkingTrip.origin = res.extracted_trip.origin;
+          if (res.extracted_trip.destination) this.currentWorkingTrip.destination = res.extracted_trip.destination;
+          if (res.extracted_trip.duration_days) this.currentWorkingTrip.duration_days = res.extracted_trip.duration_days;
+          if (res.extracted_trip.pace) this.currentWorkingTrip.pace = res.extracted_trip.pace;
+          if (res.extracted_trip.budget) this.currentWorkingTrip.budget = res.extracted_trip.budget;
+          if (res.extracted_trip.interests?.length) this.currentWorkingTrip.interests = res.extracted_trip.interests;
+        }
+
+        // Add agent response
+        this.messages.push({
+          role: 'assistant',
+          content: res.reply,
+          validation: res.validation,
+          tripData: res.show_embedded_card ? { ...this.currentWorkingTrip } : undefined,
+          showCard: res.show_embedded_card,
+          suggestedReplies: res.suggested_replies || []
+        });
+      },
+      error: (err) => {
+        console.error('Agent chat error:', err);
+        this.isThinking = false;
+        this.messages.push({
+          role: 'assistant',
+          content: 'I had a momentary connection hiccup. Could you repeat that or clarify your destination?'
+        });
+      }
+    });
+  }
+
+  confirmAndGenerateTrip(tripData: any): void {
+    if (!tripData.destination) {
+      alert('Please specify a destination.');
+      return;
+    }
+
+    this.generatingTrip = true;
+
+    // Default dates if none provided
+    const startDate = tripData.start_date || new Date(Date.now() + 86400000 * 30).toISOString().split('T')[0];
+    const duration = tripData.duration_days || 7;
+    const endDate = new Date(new Date(startDate).getTime() + (duration - 1) * 86400000).toISOString().split('T')[0];
 
     const payload: TripCreatePayload = {
-      origin: val.origin || undefined,
-      destination: val.destination as string,
-      start_date: val.startDate as string,
-      end_date: val.endDate as string,
-      duration_days: durationDays,
+      origin: tripData.origin?.trim() || undefined,
+      destination: tripData.destination.trim(),
+      duration_days: duration,
+      start_date: startDate,
+      end_date: endDate,
       preferences: {
-        budget: val.budget || undefined,
-        pace: val.pace || undefined,
-        interests: val.interests ? val.interests.split(',').map((i: string) => i.trim()).filter((i: string) => i) : undefined,
+        budget: tripData.budget || 'moderate',
+        pace: tripData.pace || 'balanced',
+        interests: tripData.interests?.length ? tripData.interests : ['Highlights', 'Culture']
       }
     };
 
     this.tripApi.createTrip(payload).subscribe({
-      next: (trip) => {
-        this.router.navigate(['/trip', trip.id]);
+      next: (created) => {
+        this.messages.push({
+          role: 'assistant',
+          content: `🚀 **Itinerary generated for ${created.title}!** Opening your interactive travel guide...`
+        });
+        setTimeout(() => {
+          this.router.navigate(['/trip', created.id]);
+        }, 800);
       },
       error: (err) => {
-        this.submitting.set(false);
-        this.error.set(err.error?.message || 'Failed to create trip. Please try again.');
+        this.generatingTrip = false;
+        console.error('Error creating trip from chat:', err);
+        alert('Failed to generate trip. Please verify details.');
       }
     });
+  }
+
+  formatMessage(text: string): string {
+    if (!text) return '';
+    // Format bold and line breaks
+    let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    formatted = formatted.replace(/\n\n/g, '<br><br>');
+    formatted = formatted.replace(/\n/g, '<br>');
+    return formatted;
   }
 }

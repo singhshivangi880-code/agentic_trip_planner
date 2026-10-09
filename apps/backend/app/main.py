@@ -1,10 +1,18 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from app.core.config import settings
 from app.core.logging import setup_logging, log_requests_middleware
 from app.core.exceptions import register_exception_handlers
 from app.core.health import check_dependencies
 from app.api.v1.router import api_router
+
+# Try to initialize tracing from our common package
+try:
+    from agents.common.tracing.setup import init_tracing
+    init_tracing(service_name="trip_planner_backend")
+except ImportError:
+    pass
 
 setup_logging()
 
@@ -13,9 +21,32 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
 )
 
+FastAPIInstrumentor.instrument_app(app)
+
 app.middleware("http")(log_requests_middleware)
 
 register_exception_handlers(app)
+
+
+@app.on_event("startup")
+def ensure_dev_users():
+    """Ensure mock dev users exist in DB to avoid foreign key errors when auth is disabled."""
+    try:
+        from app.core.db import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        with engine.begin() as conn:
+            conn.execute(text("""
+                INSERT INTO users (id, email, name, created_at, updated_at)
+                VALUES
+                  ('dev-user', 'dev-user@example.com', 'Dev User', NOW(), NOW()),
+                  ('dev-token', 'dev-token@example.com', 'Dev Token', NOW(), NOW()),
+                  ('user1', 'user1@example.com', 'User 1', NOW(), NOW())
+                ON CONFLICT (id) DO NOTHING;
+            """))
+    except Exception:
+        pass
+
 
 
 @app.get("/health")

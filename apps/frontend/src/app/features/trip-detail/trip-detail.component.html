@@ -1,0 +1,199 @@
+<div class="trip-detail-page" *ngIf="tripId">
+  <!-- Trip Header Hero -->
+  <div class="hero-card" *ngIf="trip">
+    <div class="hero-content">
+      <div class="badge-row">
+        <span class="status-badge" [class.draft]="trip.status === 'draft'">{{ trip.status | uppercase }}</span>
+        <span class="destination-badge">📍 {{ trip.destination }}</span>
+        <span class="duration-badge">⏱️ {{ trip.duration_days }} Days</span>
+      </div>
+
+      <h1 class="trip-title">{{ trip.title }}</h1>
+
+      <div class="meta-row">
+        <div class="meta-item" *ngIf="trip.origin">
+          <span class="meta-icon">🛫</span>
+          <span class="meta-text">From <strong>{{ trip.origin }}</strong></span>
+        </div>
+        <div class="meta-item" *ngIf="trip.start_date">
+          <span class="meta-icon">📅</span>
+          <span class="meta-text">{{ trip.start_date | date:'mediumDate' }} — {{ trip.end_date | date:'mediumDate' }}</span>
+        </div>
+        <div class="meta-item" *ngIf="trip.preferences?.pace">
+          <span class="meta-icon">⚡</span>
+          <span class="meta-text">Pace: <strong>{{ trip.preferences?.pace | titlecase }}</strong></span>
+        </div>
+        <div class="meta-item" *ngIf="trip.preferences?.budget">
+          <span class="meta-icon">💰</span>
+          <span class="meta-text">Budget: <strong>{{ trip.preferences?.budget | titlecase }}</strong></span>
+        </div>
+      </div>
+
+      <div class="interests-tags" *ngIf="trip.preferences?.interests?.length">
+        <span class="tag" *ngFor="let interest of trip.preferences?.interests">#{{ interest }}</span>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="hero-actions">
+      <button class="btn-action primary" (click)="shareTrip()">
+        <span>🔗</span> {{ shareCopied ? 'Link Copied!' : 'Share Trip' }}
+      </button>
+      <a routerLink="/trip/new" class="btn-action secondary">
+        <span>➕</span> New Trip
+      </a>
+    </div>
+  </div>
+
+  <!-- Loading State if trip metadata loading -->
+  <div class="loading-card" *ngIf="loading && !trip">
+    <div class="spinner-large">🌀</div>
+    <p>Loading trip details...</p>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn" [class.active]="activeTab === 'workflow'" (click)="activeTab = 'workflow'">
+      <span class="tab-icon">🤖</span>
+      <span>Agent Workflow</span>
+      <span class="tab-indicator-badge" *ngIf="workflowDone">Done</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'itinerary'" (click)="activeTab = 'itinerary'">
+      <span class="tab-icon">📅</span>
+      <span>Daily Itinerary</span>
+      <span class="tab-count-badge" *ngIf="itinerary?.days?.length">{{ itinerary?.days?.length }} Days</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'preparation'" (click)="activeTab = 'preparation'">
+      <span class="tab-icon">🧳</span>
+      <span>Packing & Readiness</span>
+    </button>
+  </div>
+
+  <!-- Tab 1: Workflow Progress View -->
+  <div class="tab-content" [hidden]="activeTab !== 'workflow'" [style.display]="activeTab === 'workflow' ? 'flex' : 'none'">
+    <app-workflow-progress 
+      [tripId]="tripId" 
+      (completed)="onWorkflowCompleted($event)"
+      (viewItinerary)="activeTab = 'itinerary'"
+      (decisionMade)="onDecisionMade($event)">
+    </app-workflow-progress>
+
+    <div class="cta-banner" *ngIf="workflowDone">
+      <div class="cta-text">
+        <h4>✨ Ready to explore your generated journey?</h4>
+        <p>Switch to your personalized daily schedule with activities and maps.</p>
+      </div>
+      <button class="btn-cta" (click)="activeTab = 'itinerary'">
+        View Itinerary ➔
+      </button>
+    </div>
+  </div>
+
+  <!-- Tab 2: Itinerary View & Conversational Co-Pilot -->
+  <div class="tab-content" [hidden]="activeTab !== 'itinerary'" [style.display]="activeTab === 'itinerary' ? 'flex' : 'none'">
+    <!-- Conversational Co-Pilot Section -->
+    <div class="copilot-card">
+      <div class="copilot-header" (click)="toggleCopilot()">
+        <div class="copilot-title-group">
+          <span class="copilot-avatar">✨</span>
+          <div>
+            <h3>Conversational Trip Co-Pilot</h3>
+            <p>Chat anytime to inject custom ideas, ask questions, or dynamically enrich your schedule</p>
+          </div>
+        </div>
+        <button class="btn-toggle-copilot" type="button">
+          {{ copilotOpen ? 'Hide Co-Pilot ▾' : 'Chat with Co-Pilot ▴' }}
+        </button>
+      </div>
+
+      <div class="copilot-body" *ngIf="copilotOpen">
+        <!-- Quick Ideas Chips -->
+        <div class="quick-ideas-row">
+          <span class="ideas-label">Suggested Ideas:</span>
+          <button 
+            type="button" 
+            class="idea-chip" 
+            *ngFor="let idea of quickIdeas"
+            (click)="sendCopilotMessage(idea)">
+            {{ idea }}
+          </button>
+        </div>
+
+        <!-- Chat Stream -->
+        <div class="copilot-stream">
+          <div 
+            class="copilot-bubble" 
+            *ngFor="let msg of copilotMessages"
+            [class.bubble-user]="msg.sender === 'user'"
+            [class.bubble-agent]="msg.sender === 'agent'">
+            <div class="bubble-meta">
+              <span class="bubble-sender">{{ msg.sender === 'user' ? 'You' : 'Travel Agent' }}</span>
+              <span class="bubble-time">{{ msg.time }}</span>
+            </div>
+            <div class="bubble-text">{{ msg.text }}</div>
+            <div class="bubble-badge" *ngIf="msg.addedItem">
+              ✨ <strong>Added to Day {{ msg.addedItem.day }}:</strong> {{ msg.addedItem.title }}
+            </div>
+          </div>
+
+          <div class="copilot-bubble bubble-agent typing" *ngIf="copilotLoading">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-label">Travel Agent is thinking...</span>
+          </div>
+        </div>
+
+        <!-- Input Box -->
+        <div class="copilot-input-row">
+          <input 
+            type="text" 
+            [(ngModel)]="copilotInput" 
+            placeholder="Type any idea or request, e.g. 'Add a sushi omakase spot on Day 1'..."
+            (keydown.enter)="sendCopilotMessage()"
+            [disabled]="copilotLoading"
+            class="copilot-input"
+          />
+          <button 
+            class="btn-copilot-send" 
+            type="button"
+            (click)="sendCopilotMessage()" 
+            [disabled]="copilotLoading || !copilotInput.trim()">
+            Send Idea ➔
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <app-itinerary-view 
+      [itinerary]="itinerary"
+      (replanRequest)="onReplan($event)"
+      (undoRequest)="onUndo()">
+    </app-itinerary-view>
+  </div>
+
+  <!-- Tab 3: Packing & Preparation View -->
+  <div class="tab-content" [hidden]="activeTab !== 'preparation'" [style.display]="activeTab === 'preparation' ? 'flex' : 'none'">
+    <div class="prep-card">
+      <div class="prep-header">
+        <h3>🧳 Trip Preparation & Packing Guide</h3>
+        <p>Curated checklist based on destination ({{ trip?.destination || 'your destination' }}) and travel dates.</p>
+      </div>
+
+      <div class="prep-grid">
+        <div class="prep-category" *ngFor="let cat of packingList">
+          <div class="cat-title">
+            <span>{{ cat.icon }}</span>
+            <h4>{{ cat.category }}</h4>
+          </div>
+          <div class="checklist">
+            <label class="check-item" *ngFor="let item of cat.items">
+              <input type="checkbox" [(ngModel)]="item.checked">
+              <span [class.checked-text]="item.checked">{{ item.name }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

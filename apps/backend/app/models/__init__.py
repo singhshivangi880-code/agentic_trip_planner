@@ -4,6 +4,7 @@ from app.models.trip import Trip, TripVersion
 from app.models.itinerary import TripDay, ItineraryItem
 from app.models.recommendation import Recommendation
 from app.models.booking import Booking
+from app.models.share import TripShare
 
 __all__ = [
     "User",
@@ -14,4 +15,5 @@ __all__ = [
     "ItineraryItem",
     "Recommendation",
     "Booking",
+    "TripShare",
 ]
