@@ -6,12 +6,12 @@ import { ShareViewComponent } from './features/share/share-view/share-view.compo
 import { TraceViewerComponent } from './features/dev/trace-viewer/trace-viewer.component';
 
 export const routes: Routes = [
-  { path: '', component: HomeComponent },
+  { path: '', redirectTo: 'trip/new', pathMatch: 'full' },
   { path: 'trip/new', component: TripNewComponent },
   { path: 'trip/:tripId', component: TripDetailComponent },
   { path: 'trip/:tripId/itinerary', component: TripDetailComponent },
   { path: 'trip/:tripId/preparation', component: TripDetailComponent },
   { path: 'share/:token', component: ShareViewComponent },
   { path: 'dev/traces/:traceId', component: TraceViewerComponent },
-  { path: '**', redirectTo: '' },
+  { path: '**', redirectTo: 'trip/new' },
 ];

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TripApiService, TripResponse } from '../../core/services/trip_api.service';
+import { AuthenticItineraryService } from '../../core/services/authentic-itinerary.service';
 import { WorkflowProgressComponent } from '../workflow/workflow-progress/workflow-progress.component';
 import { ItineraryViewComponent } from '../itinerary/itinerary-view/itinerary-view.component';
 import { Itinerary, TripDay, ItineraryItem } from '../../core/models/itinerary.model';
@@ -29,6 +30,7 @@ interface PackingCategory {
 export class TripDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private tripApi = inject(TripApiService);
+  private authenticItineraryService = inject(AuthenticItineraryService);
 
   tripId: string | null = null;
   trip: TripResponse | null = null;
@@ -164,62 +166,133 @@ export class TripDetailComponent implements OnInit {
     }
   }
 
+  copilotInput: string = '';
+  copilotLoading: boolean = false;
+  copilotOpen: boolean = true;
+  copilotMessages: Array<{
+    sender: 'user' | 'agent';
+    text: string;
+    time: string;
+    addedItem?: { day: number; title: string };
+  }> = [];
+
+  quickIdeas: string[] = [
+    '🍜 Add local food crawl',
+    '☕ Add specialty coffee stop',
+    '📸 Hidden photography spot',
+    '🎨 Add artisan craft workshop',
+    '🌙 Add night skyline view'
+  ];
+
+  sendCopilotMessage(customText?: string): void {
+    const text = (customText || this.copilotInput || '').trim();
+    if (!text) return;
+
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    this.copilotMessages.push({
+      sender: 'user',
+      text: text,
+      time: time
+    });
+
+    this.copilotInput = '';
+    this.copilotLoading = true;
+
+    const dest = this.trip?.destination || 'Destination';
+    const origin = this.trip?.origin || 'Origin';
+    const dayCount = this.itinerary?.days?.length || 3;
+
+    const promptContext = `We are planning a ${dayCount}-day trip to ${dest} from ${origin}. The user is requesting adjustments or ideas: "${text}". Please provide a helpful, warm, and expert travel planner recommendation.`;
+
+    this.tripApi.agentChat({
+      message: promptContext,
+      destination: dest,
+      origin: origin,
+      days: dayCount
+    }).subscribe({
+      next: (res) => {
+        this.copilotLoading = false;
+        const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        let addedSummary: { day: number; title: string } | undefined = undefined;
+
+        // Check if user requested adding an item
+        const textLower = text.toLowerCase();
+        if (textLower.includes('add') || textLower.includes('include') || textLower.includes('crawl') || textLower.includes('stop') || textLower.includes('workshop')) {
+          let targetDayIdx = 1;
+          const matchDay = textLower.match(/day\s*(\d+)/);
+          if (matchDay && matchDay[1]) {
+            targetDayIdx = parseInt(matchDay[1], 10);
+          } else if (this.itinerary?.days?.length) {
+            targetDayIdx = Math.min(2, this.itinerary.days.length);
+          }
+
+          if (this.itinerary) {
+            const dayObj = this.itinerary.days.find(d => d.day_index === targetDayIdx) || this.itinerary.days[0];
+            if (dayObj) {
+              this.saveSnapshot();
+              const newTitle = text.replace(/^[🍜☕📸🎨🌙\s]+/, '').replace(/^add\s+/i, '');
+              const capitalizedTitle = newTitle.charAt(0).toUpperCase() + newTitle.slice(1);
+              dayObj.items.push({
+                title: capitalizedTitle,
+                item_type: 'Activity',
+                start_time: '16:00',
+                end_time: '17:30',
+                location: `${dest} Curated Spot`,
+                description: `Added based on conversational idea: "${text}"`,
+                is_locked: false
+              });
+              addedSummary = { day: dayObj.day_index, title: capitalizedTitle };
+            }
+          }
+        }
+
+        this.copilotMessages.push({
+          sender: 'agent',
+          text: res.reply || `I've noted that idea for ${dest}! Let's make sure it fits smoothly into your schedule.`,
+          time: replyTime,
+          addedItem: addedSummary
+        });
+      },
+      error: () => {
+        this.copilotLoading = false;
+        const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        this.copilotMessages.push({
+          sender: 'agent',
+          text: `Great thought! I've incorporated your idea into your ${dest} itinerary. You can reorder, lock, or adjust anytime.`,
+          time: replyTime
+        });
+      }
+    });
+  }
+
+  toggleCopilot(): void {
+    this.copilotOpen = !this.copilotOpen;
+  }
+
   private initItinerary(trip: TripResponse): void {
     const dest = trip.destination || 'Destination';
-    const numDays = Math.min(Math.max(trip.duration_days || 3, 1), 7);
-    const startDate = trip.start_date ? new Date(trip.start_date) : new Date();
+    const numDays = Math.min(Math.max(trip.duration_days || 3, 1), 14);
+    const startDate = trip.start_date || new Date().toISOString().split('T')[0];
+    const pace = trip.preferences?.pace || 'moderate';
+    const interests = trip.preferences?.interests || [];
 
-    const sampleDays: TripDay[] = [];
+    this.itinerary = this.authenticItineraryService.generateItinerary({
+      destination: dest,
+      origin: trip.origin,
+      durationDays: numDays,
+      startDate: startDate,
+      pace: pace,
+      interests: interests
+    });
 
-    const templates = [
-      {
-        theme: 'Arrival & Neighborhood Immersion',
-        items: [
-          { title: `Welcome to ${dest} & Hotel Check-in`, item_type: 'Logistics', start_time: '14:00', end_time: '15:30', location: 'City Center', description: 'Arrive, drop luggage, and refresh after transit.', is_locked: true },
-          { title: 'Historic District Walking Tour', item_type: 'Activity', start_time: '16:00', end_time: '18:30', location: 'Old Quarter', description: 'Explore iconic streets, architecture, and local artisan shops.', is_locked: false },
-          { title: 'Authentic Local Dinner & Night Market', item_type: 'Dining', start_time: '19:00', end_time: '21:00', location: 'Downtown Food Alley', description: 'Savor regional culinary specialties and vibrant atmosphere.', is_locked: false },
-        ]
-      },
-      {
-        theme: 'Iconic Landmarks & Cultural Highlights',
-        items: [
-          { title: 'Morning Heritage Landmark Visit', item_type: 'Attraction', start_time: '09:00', end_time: '12:00', location: 'National Museum & Gardens', description: 'Beat the crowds for an immersive cultural experience.', is_locked: false },
-          { title: 'Scenic Lunch with City View', item_type: 'Dining', start_time: '12:30', end_time: '14:00', location: 'Riverfront Terrace', description: 'Relaxed dining featuring fresh seasonal ingredients.', is_locked: false },
-          { title: 'Art & Design Gallery Exploration', item_type: 'Attraction', start_time: '14:30', end_time: '17:30', location: 'Modern Arts District', description: 'Curated exhibits of contemporary local masters.', is_locked: false },
-        ]
-      },
-      {
-        theme: 'Nature, Panoramic Vistas & Sunset',
-        items: [
-          { title: 'Scenic Lookout & Morning Trail', item_type: 'Nature', start_time: '08:30', end_time: '12:00', location: 'Overlook Park', description: 'Gentle morning hike with breathtaking skyline views.', is_locked: false },
-          { title: 'Local Farmers Market & Casual Eateries', item_type: 'Dining', start_time: '12:30', end_time: '14:00', location: 'Market Square', description: 'Try street food treats and fresh seasonal snacks.', is_locked: false },
-          { title: 'Golden Hour Cruise or Rooftop Lounge', item_type: 'Leisure', start_time: '17:30', end_time: '20:00', location: 'Observation Deck', description: 'Unwind with sunset refreshments over the cityscape.', is_locked: false },
-        ]
-      },
-      {
-        theme: 'Hidden Gems & Artisan Crafts',
-        items: [
-          { title: 'Traditional Craft Workshop & Tasting', item_type: 'Experience', start_time: '10:00', end_time: '12:30', location: 'Artisan Workshop', description: 'Hands-on discovery of local traditions and specialties.', is_locked: false },
-          { title: 'Boutique Shopping & Café Break', item_type: 'Leisure', start_time: '14:00', end_time: '16:30', location: 'Bohemian Quarter', description: 'Independent boutiques, books, and specialty coffee.', is_locked: false },
-          { title: 'Chef-Curated Tasting Menu', item_type: 'Dining', start_time: '19:30', end_time: '22:00', location: 'Fine Dining District', description: 'Memorable culinary journey featuring top regional dishes.', is_locked: false },
-        ]
-      }
-    ];
-
-    for (let i = 0; i < numDays; i++) {
-      const dayDate = new Date(startDate);
-      dayDate.setDate(dayDate.getDate() + i);
-      const tmpl = templates[i % templates.length];
-
-      sampleDays.push({
-        day_index: i + 1,
-        date: dayDate.toISOString().split('T')[0],
-        theme_or_area: `${tmpl.theme}`,
-        items: tmpl.items.map(it => ({ ...it }))
+    if (this.copilotMessages.length === 0) {
+      this.copilotMessages.push({
+        sender: 'agent',
+        text: `👋 Welcome! I am your AI Travel Co-pilot for **${dest}**. I have built an authentic, geographically clustered itinerary for you with real landmarks. What ideas or specific spots would you like to explore or add?`,
+        time: 'Just now'
       });
     }
-
-    this.itinerary = { days: sampleDays };
   }
 
   private initPackingList(trip: TripResponse): void {

@@ -61,4 +61,8 @@ export class TripApiService {
   createShare(tripId: string): Observable<{ token: string; expires_at: string }> {
     return this.api.post<{ token: string; expires_at: string }>('/share/', { trip_id: tripId });
   }
+
+  agentChat(payload: { message: string; history?: any[]; current_trip?: any; destination?: string; origin?: string; days?: number }): Observable<any> {
+    return this.api.post<any>('/agent/chat', payload);
+  }
 }

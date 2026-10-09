@@ -1,0 +1,176 @@
+<div class="chat-planner-container">
+  <!-- Header Banner -->
+  <div class="planner-header">
+    <div class="header-badge">Autonomous Travel Co-Pilot</div>
+    <h2>Conversational Trip Planning</h2>
+    <p>Describe your dream journey naturally. Our AI agent verifies locations, checks transit feasibility, and crafts authentic itineraries.</p>
+  </div>
+
+  <!-- Main Chat Window -->
+  <div class="chat-window">
+    <div class="messages-container" #scrollContainer>
+      
+      <!-- Loop through chat messages -->
+      <div *ngFor="let msg of messages; let i = index" class="message-row" [ngClass]="msg.role">
+        
+        <div class="avatar" *ngIf="msg.role === 'assistant'">🤖</div>
+        
+        <div class="bubble-wrap">
+          <div class="sender-label" *ngIf="msg.role === 'assistant'">AI Travel Agent</div>
+          
+          <div class="bubble" [ngClass]="msg.role">
+            <!-- Text Content -->
+            <div class="text-content" [innerHTML]="formatMessage(msg.content)"></div>
+
+            <!-- Embedded Agentic Location Flag Card -->
+            <div *ngIf="msg.validation && !msg.validation.is_valid" class="validation-flag-card">
+              <div class="flag-header">
+                <span class="flag-icon">⚠️</span>
+                <strong>Location Check Required</strong>
+              </div>
+              <ul class="flag-list">
+                <li *ngFor="let flag of msg.validation.flags">{{ flag }}</li>
+              </ul>
+              <div class="suggestions-row" *ngIf="msg.validation.suggestions?.length">
+                <span class="sug-label">Did you mean:</span>
+                <button 
+                  *ngFor="let sug of msg.validation.suggestions" 
+                  class="sug-chip" 
+                  (click)="applySuggestion(sug)">
+                  {{ sug }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Embedded Interactive Trip Blueprint Card -->
+            <div *ngIf="msg.showCard && msg.tripData" class="embedded-trip-card">
+              <div class="card-title-row">
+                <div class="card-title">
+                  <span>🗺️</span>
+                  <strong>Trip Blueprint</strong>
+                </div>
+                <span class="card-status-badge">Ready to Generate</span>
+              </div>
+
+              <div class="card-grid">
+                <div class="field-group">
+                  <label>🛫 Departure (Origin)</label>
+                  <input type="text" [(ngModel)]="msg.tripData.origin" placeholder="e.g. Pune, Mumbai">
+                </div>
+                <div class="field-group">
+                  <label>🛬 Destination</label>
+                  <input type="text" [(ngModel)]="msg.tripData.destination" placeholder="e.g. Japan, Tokyo">
+                </div>
+                <div class="field-group">
+                  <label>⏱️ Duration</label>
+                  <div class="duration-input-wrap">
+                    <input type="number" [(ngModel)]="msg.tripData.duration_days" min="1" max="30">
+                    <span>Days</span>
+                  </div>
+                </div>
+                <div class="field-group">
+                  <label>⚡ Pace</label>
+                  <select [(ngModel)]="msg.tripData.pace">
+                    <option value="relaxed">Relaxed</option>
+                    <option value="balanced">Balanced</option>
+                    <option value="packed">Packed</option>
+                  </select>
+                </div>
+                <div class="field-group">
+                  <label>💰 Budget</label>
+                  <select [(ngModel)]="msg.tripData.budget">
+                    <option value="budget">Budget</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="luxury">Luxury</option>
+                  </select>
+                </div>
+                <div class="field-group">
+                  <label>📅 Start Date (Optional)</label>
+                  <input type="date" [(ngModel)]="msg.tripData.start_date">
+                </div>
+              </div>
+
+              <!-- Tags / Interests -->
+              <div class="interests-section" *ngIf="msg.tripData.interests?.length">
+                <span class="section-label">Identified Interests:</span>
+                <div class="chips-wrap">
+                  <span class="tag-chip" *ngFor="let tag of msg.tripData.interests">#{{ tag }}</span>
+                </div>
+              </div>
+
+              <!-- Action button -->
+              <div class="card-action-row">
+                <button 
+                  class="btn-generate-itinerary" 
+                  [disabled]="generatingTrip"
+                  (click)="confirmAndGenerateTrip(msg.tripData)">
+                  <span>{{ generatingTrip ? 'Orchestrating Agents...' : '🚀 Generate Authentic Itinerary' }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Quick Suggestion Action Chips -->
+            <div class="quick-replies" *ngIf="msg.suggestedReplies?.length">
+              <button 
+                *ngFor="let reply of msg.suggestedReplies" 
+                class="quick-reply-btn" 
+                (click)="sendUserMessage(reply)">
+                {{ reply }}
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="avatar user-avatar" *ngIf="msg.role === 'user'">👤</div>
+      </div>
+
+      <!-- Agent Typing Indicator -->
+      <div *ngIf="isThinking" class="message-row assistant">
+        <div class="avatar">🤖</div>
+        <div class="bubble assistant thinking-bubble">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="thinking-text">Agent analyzing locations and transit paths...</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Suggested Starter Ideas (when conversation is fresh) -->
+    <div class="starter-prompts" *ngIf="messages.length <= 2">
+      <span class="starter-label">Try asking:</span>
+      <button class="starter-btn" (click)="sendUserMessage('I want to plan a 14-day trip to Japan from Pune, love ramen, culture, and anime')">
+        🗾 14-day Japan Trip from Pune
+      </button>
+      <button class="starter-btn" (click)="sendUserMessage('Plan a 7-day culinary and art trip to Paris from Mumbai')">
+        🥐 7 Days in Paris from Mumbai
+      </button>
+      <button class="starter-btn" (click)="sendUserMessage('Plan a 10-day trip to Italy from Delhi visiting Rome, Florence and Venice')">
+        🏛️ 10 Days in Italy from Delhi
+      </button>
+      <button class="starter-btn" (click)="sendUserMessage('I want to go to Japan from pube for 2 weeks')">
+        ⚠️ Test Typo Validation ('pube' ➔ Pune)
+      </button>
+    </div>
+
+    <!-- Chat Input Bar -->
+    <div class="input-bar">
+      <textarea 
+        #chatInput
+        [(ngModel)]="userInput" 
+        (keydown.enter)="onEnterPress($event)"
+        placeholder="Type your travel ideas... (e.g. '10 days in Japan from Pune with moderate budget, love street food')"
+        rows="2">
+      </textarea>
+      <button 
+        class="btn-send" 
+        [disabled]="!userInput.trim() || isThinking" 
+        (click)="submitMessage()">
+        <span>Send</span>
+        <span class="send-icon">➔</span>
+      </button>
+    </div>
+  </div>
+</div>
