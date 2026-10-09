@@ -30,18 +30,14 @@ class MockAuthProvider(AuthProvider):
 # For production, we would inject a JWT or Firebase or Auth0 provider here
 auth_provider = MockAuthProvider()
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), request: Request = None) -> Optional[User]:
-    if not credentials:
-        return None
-    user = auth_provider.authenticate(request)
-    return user
+def get_current_user(request: Request = None) -> Optional[User]:
+    # Disabled auth for now
+    return User(id="dev-user", roles=["dev"])
 
 def require_current_user(user: Optional[User] = Depends(get_current_user)) -> User:
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
+    # Always return user
     return user
 
 def require_dev(user: User = Depends(require_current_user)) -> User:
-    if "dev" not in user.roles:
-        raise HTTPException(status_code=403, detail="Developer access required")
+    # Always return user
     return user

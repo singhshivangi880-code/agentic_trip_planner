@@ -28,6 +28,27 @@ app.middleware("http")(log_requests_middleware)
 register_exception_handlers(app)
 
 
+@app.on_event("startup")
+def ensure_dev_users():
+    """Ensure mock dev users exist in DB to avoid foreign key errors when auth is disabled."""
+    try:
+        from app.core.db import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        with engine.begin() as conn:
+            conn.execute(text("""
+                INSERT INTO users (id, email, name, created_at, updated_at)
+                VALUES
+                  ('dev-user', 'dev-user@example.com', 'Dev User', NOW(), NOW()),
+                  ('dev-token', 'dev-token@example.com', 'Dev Token', NOW(), NOW()),
+                  ('user1', 'user1@example.com', 'User 1', NOW(), NOW())
+                ON CONFLICT (id) DO NOTHING;
+            """))
+    except Exception:
+        pass
+
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}

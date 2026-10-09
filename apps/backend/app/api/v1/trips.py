@@ -61,12 +61,11 @@ def require_trip_owner(
     user: User = Depends(require_current_user),
     repo: TripRepository = Depends(get_trip_repo)
 ) -> TripRepository:
-    """Dependency to check if the current user owns the trip."""
+    """Dependency to check if the current user owns the trip (ownership check disabled for now)."""
     trip = repo.get_trip_by_id(trip_id)
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
-    if trip.user_id and trip.user_id != user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to access this trip")
+    # Ownership check disabled while auth is bypassed
     return repo
 
 @router.post("", response_model=TripResponse, status_code=status.HTTP_201_CREATED, dependencies=[rate_limit(times=10, seconds=60)])

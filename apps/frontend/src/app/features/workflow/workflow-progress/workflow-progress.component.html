@@ -1,30 +1,65 @@
 <div class="workflow-container">
-  <h3>Generating your trip...</h3>
+  <div class="workflow-header">
+    <div class="workflow-title-wrap">
+      <div class="pulse-dot" [class.completed]="workflowCompleted"></div>
+      <h3>{{ workflowCompleted ? 'Autonomous Planning Complete' : 'AI Agent Orchestration' }}</h3>
+    </div>
+    <button class="btn-refresh" (click)="connect()" title="Restart Live Stream">
+      <span class="refresh-icon">🔄</span> Re-run
+    </button>
+  </div>
   
   <div class="agent-list">
+    <div *ngIf="agents.length === 0" class="agent-connecting">
+      <span class="spinner">⚙️</span> Connecting to AI Agent workflow stream...
+    </div>
+
     <div *ngFor="let agent of agents" class="agent-item" [ngClass]="agent.status">
       <div class="status-icon">
         <span *ngIf="agent.status === 'pending'">🕒</span>
-        <span *ngIf="agent.status === 'running'" class="spinner">🔄</span>
-        <span *ngIf="agent.status === 'completed'">✅</span>
-        <span *ngIf="agent.status === 'failed'">❌</span>
+        <span *ngIf="agent.status === 'running'" class="spinner">⚡</span>
+        <span *ngIf="agent.status === 'completed'">✨</span>
+        <span *ngIf="agent.status === 'failed'">⚠️</span>
       </div>
       <div class="agent-info">
-        <strong>{{ agent.name }}</strong>
-        <span>{{ agent.message }}</span>
+        <div class="agent-header-row">
+          <strong>{{ agent.name }}</strong>
+          <span class="status-pill" [ngClass]="agent.status">{{ agent.status }}</span>
+        </div>
+        <span class="agent-message">{{ agent.message }}</span>
       </div>
     </div>
   </div>
 
   <div *ngIf="checkpointRequired" class="checkpoint-card">
-    <h4>Question for you:</h4>
-    <p>{{ checkpointData?.question }}</p>
+    <div class="checkpoint-badge">Human Checkpoint</div>
+    <h4>{{ checkpointData?.question || 'Your preference is requested:' }}</h4>
+    <p class="checkpoint-sub">The agent requires your input to tailor the itinerary.</p>
     <div class="options">
-      <button *ngFor="let opt of checkpointData?.options">{{ opt }}</button>
+      <button 
+        *ngFor="let opt of checkpointData?.options" 
+        class="opt-btn"
+        (click)="onSelectOption(opt)">
+        {{ opt }}
+      </button>
     </div>
   </div>
 
+  <div *ngIf="selectedDecision" class="decision-feedback">
+    ✓ Preference selected: <strong>{{ selectedDecision }}</strong>. Resuming agent planning...
+  </div>
+
   <div *ngIf="workflowCompleted" class="success-message">
-    🎉 Your itinerary is ready!
+    <div class="success-left">
+      <div class="success-icon">🎉</div>
+      <div class="success-text">
+        <strong>Your Itinerary is Generated!</strong>
+        <p>All research and validation agents have completed their synthesis.</p>
+        <span *ngIf="selectedDecision" class="decision-badge">Pace set to: {{ selectedDecision }}</span>
+      </div>
+    </div>
+    <button class="btn-open-itinerary" (click)="viewItinerary.emit()">
+      Open 7-Day Itinerary ➔
+    </button>
   </div>
 </div>
