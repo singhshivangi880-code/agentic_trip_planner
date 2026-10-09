@@ -6,6 +6,7 @@ export interface WorkflowEvent {
   agent_name?: string;
   message: string;
   data?: any;
+  itinerary?: any;
 }
 
 @Injectable({
@@ -17,10 +18,12 @@ export class WorkflowSseService {
   
   constructor(private zone: NgZone) {}
 
-  connect(tripId: string): Observable<WorkflowEvent> {
+  connect(tripId: string, force: boolean = false): Observable<WorkflowEvent> {
     this.disconnect();
     
-    const url = `/api/v1/trips/${tripId}/workflow/stream`;
+    const url = force 
+      ? `/api/v1/trips/${tripId}/workflow/stream?force=true`
+      : `/api/v1/trips/${tripId}/workflow/stream`;
     this.eventSource = new EventSource(url);
 
     this.eventSource.onmessage = (event) => {

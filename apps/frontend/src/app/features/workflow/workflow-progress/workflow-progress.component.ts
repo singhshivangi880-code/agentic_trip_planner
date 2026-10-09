@@ -19,7 +19,7 @@ interface AgentState {
 })
 export class WorkflowProgressComponent implements OnInit, OnDestroy {
   @Input() tripId!: string;
-  @Output() completed = new EventEmitter<void>();
+  @Output() completed = new EventEmitter<any>();
   @Output() viewItinerary = new EventEmitter<void>();
   @Output() decisionMade = new EventEmitter<string>();
   
@@ -36,7 +36,7 @@ export class WorkflowProgressComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (this.tripId) {
-      this.connect();
+      this.connect(false);
     }
   }
 
@@ -44,14 +44,14 @@ export class WorkflowProgressComponent implements OnInit, OnDestroy {
     this.disconnect();
   }
 
-  public connect(): void {
+  public connect(force: boolean = false): void {
     this.disconnect();
     this.agents = [];
     this.workflowCompleted = false;
     this.checkpointRequired = false;
     this.selectedDecision = null;
 
-    this.sseSub = this.sseService.connect(this.tripId).subscribe(event => {
+    this.sseSub = this.sseService.connect(this.tripId, force).subscribe(event => {
       this.handleEvent(event);
     });
   }
@@ -90,7 +90,7 @@ export class WorkflowProgressComponent implements OnInit, OnDestroy {
     if (event.type === 'workflow_completed') {
       this.workflowCompleted = true;
       this.checkpointRequired = false;
-      this.completed.emit();
+      this.completed.emit(event.itinerary || event.data);
       return;
     }
 

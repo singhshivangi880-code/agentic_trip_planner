@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TripApiService, TripResponse } from '../../core/services/trip_api.service';
-import { AuthenticItineraryService } from '../../core/services/authentic-itinerary.service';
 import { WorkflowProgressComponent } from '../workflow/workflow-progress/workflow-progress.component';
 import { ItineraryViewComponent } from '../itinerary/itinerary-view/itinerary-view.component';
 import { Itinerary, TripDay, ItineraryItem } from '../../core/models/itinerary.model';
@@ -30,7 +29,6 @@ interface PackingCategory {
 export class TripDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private tripApi = inject(TripApiService);
-  private authenticItineraryService = inject(AuthenticItineraryService);
 
   tripId: string | null = null;
   trip: TripResponse | null = null;
@@ -67,17 +65,28 @@ export class TripDetailComponent implements OnInit {
     });
   }
 
-  onWorkflowCompleted(): void {
+  onWorkflowCompleted(itineraryPayload?: any): void {
     this.workflowDone = true;
-    if (this.trip && !this.itinerary) {
-      this.initItinerary(this.trip);
+    if (itineraryPayload && itineraryPayload.days?.length) {
+      this.itinerary = itineraryPayload;
+    }
+    if (this.tripId) {
+      this.tripApi.getTrip(this.tripId).subscribe({
+        next: (t) => {
+          this.trip = t;
+          const prefs: any = t.preferences || {};
+          if (prefs.generated_itinerary && prefs.generated_itinerary.days?.length) {
+            this.itinerary = prefs.generated_itinerary;
+          }
+        }
+      });
     }
     // Smoothly auto-transition to itinerary tab so the user sees the generated schedule immediately
     setTimeout(() => {
       if (this.activeTab === 'workflow') {
         this.activeTab = 'itinerary';
       }
-    }, 1200);
+    }, 1000);
   }
 
   onDecisionMade(decision: string): void {
@@ -213,7 +222,7 @@ export class TripDetailComponent implements OnInit {
       next: (res) => {
         this.copilotLoading = false;
         const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
+
         let addedSummary: { day: number; title: string } | undefined = undefined;
 
         // Check if user requested adding an item
@@ -271,25 +280,18 @@ export class TripDetailComponent implements OnInit {
   }
 
   private initItinerary(trip: TripResponse): void {
+    const currentPrefs: any = trip.preferences || {};
+    if (currentPrefs.generated_itinerary && currentPrefs.generated_itinerary.days?.length) {
+      this.itinerary = currentPrefs.generated_itinerary;
+    } else {
+      this.itinerary = null;
+    }
+
     const dest = trip.destination || 'Destination';
-    const numDays = Math.min(Math.max(trip.duration_days || 3, 1), 14);
-    const startDate = trip.start_date || new Date().toISOString().split('T')[0];
-    const pace = trip.preferences?.pace || 'moderate';
-    const interests = trip.preferences?.interests || [];
-
-    this.itinerary = this.authenticItineraryService.generateItinerary({
-      destination: dest,
-      origin: trip.origin,
-      durationDays: numDays,
-      startDate: startDate,
-      pace: pace,
-      interests: interests
-    });
-
     if (this.copilotMessages.length === 0) {
       this.copilotMessages.push({
         sender: 'agent',
-        text: `👋 Welcome! I am your AI Travel Co-pilot for **${dest}**. I have built an authentic, geographically clustered itinerary for you with real landmarks. What ideas or specific spots would you like to explore or add?`,
+        text: `👋 Welcome! I am your AI Travel Co-pilot for **${dest}**. Ask me any travel questions or request adjustments once the agents finish synthesizing your authentic schedule!`,
         time: 'Just now'
       });
     }
@@ -303,7 +305,7 @@ export class TripDetailComponent implements OnInit {
         category: 'Essentials & Documents',
         icon: '🛂',
         items: [
-          { name: 'Passport with at least 6 months validity', checked: true },
+          { name: 'Passport with at least 6 months validity', checked: false },
           { name: `Visa requirements checked for ${dest}`, checked: false },
           { name: 'Travel Insurance confirmation & emergency contacts', checked: false },
           { name: 'Copies of bookings, tickets, and reservations', checked: false },
@@ -323,7 +325,7 @@ export class TripDetailComponent implements OnInit {
         category: 'Clothing & Comfort',
         icon: '👟',
         items: [
-          { name: 'Comfortable walking shoes (10,000+ daily steps)', checked: true },
+          { name: 'Comfortable walking shoes (10,000+ daily steps)', checked: false },
           { name: 'Lightweight weather-resistant layer / jacket', checked: false },
           { name: 'Daypack or crossbody bag with anti-theft zipper', checked: false },
           { name: 'Compact travel umbrella or rain poncho', checked: false },
@@ -336,7 +338,7 @@ export class TripDetailComponent implements OnInit {
           { name: 'Prescription medications & basic first-aid kit', checked: false },
           { name: 'Reusable water bottle with filter compatibility', checked: false },
           { name: 'Sunscreen and travel-sized toiletries', checked: false },
-          { name: 'Hand sanitizer & travel wipes', checked: true },
+          { name: 'Hand sanitizer & travel wipes', checked: false },
         ]
       }
     ];

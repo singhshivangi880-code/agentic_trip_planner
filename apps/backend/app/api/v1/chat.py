@@ -105,7 +105,7 @@ Evaluate the message, perform agentic location verification, extract parameters,
 
     gemini_key = os.environ.get("GEMINI_API_KEY")
     if gemini_key:
-        for model_name in ["gemini-flash-latest", "gemini-3.8-flash", "gemini-2.5-flash-lite"]:
+        for model_name in ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3.7-flash"]:
             try:
                 from google import genai
                 from google.genai import types

@@ -4,7 +4,7 @@
       <div class="pulse-dot" [class.completed]="workflowCompleted"></div>
       <h3>{{ workflowCompleted ? 'Autonomous Planning Complete' : 'AI Agent Orchestration' }}</h3>
     </div>
-    <button class="btn-refresh" (click)="connect()" title="Restart Live Stream">
+    <button class="btn-refresh" (click)="connect(true)" title="Re-run Live Multi-Agent Workflow">
       <span class="refresh-icon">🔄</span> Re-run
     </button>
   </div>
@@ -59,7 +59,7 @@
       </div>
     </div>
     <button class="btn-open-itinerary" (click)="viewItinerary.emit()">
-      Open 7-Day Itinerary ➔
+      View Generated Itinerary ➔
     </button>
   </div>
 </div>

@@ -70,10 +70,10 @@
   </div>
 
   <!-- Tab 1: Workflow Progress View -->
-  <div class="tab-content" *ngIf="activeTab === 'workflow'">
+  <div class="tab-content" [hidden]="activeTab !== 'workflow'" [style.display]="activeTab === 'workflow' ? 'flex' : 'none'">
     <app-workflow-progress 
       [tripId]="tripId" 
-      (completed)="onWorkflowCompleted()"
+      (completed)="onWorkflowCompleted($event)"
       (viewItinerary)="activeTab = 'itinerary'"
       (decisionMade)="onDecisionMade($event)">
     </app-workflow-progress>
@@ -90,7 +90,7 @@
   </div>
 
   <!-- Tab 2: Itinerary View & Conversational Co-Pilot -->
-  <div class="tab-content" *ngIf="activeTab === 'itinerary'">
+  <div class="tab-content" [hidden]="activeTab !== 'itinerary'" [style.display]="activeTab === 'itinerary' ? 'flex' : 'none'">
     <!-- Conversational Co-Pilot Section -->
     <div class="copilot-card">
       <div class="copilot-header" (click)="toggleCopilot()">
@@ -173,7 +173,7 @@
   </div>
 
   <!-- Tab 3: Packing & Preparation View -->
-  <div class="tab-content" *ngIf="activeTab === 'preparation'">
+  <div class="tab-content" [hidden]="activeTab !== 'preparation'" [style.display]="activeTab === 'preparation' ? 'flex' : 'none'">
     <div class="prep-card">
       <div class="prep-header">
         <h3>🧳 Trip Preparation & Packing Guide</h3>

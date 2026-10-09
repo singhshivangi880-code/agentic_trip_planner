@@ -50,6 +50,9 @@
   </div>
 </div>
 
-<div class="empty-state" *ngIf="!itinerary">
-  <p>No itinerary generated yet. Hang tight!</p>
+<div class="empty-state" *ngIf="!itinerary || !itinerary.days || !itinerary.days.length">
+  <div class="empty-icon">🤖</div>
+  <h3>Multi-Agent Synthesis in Progress</h3>
+  <p>The AI agents (Intent, Traveler Profile, Recommendation, and Itinerary) are curating authentic landmarks, dining spots, and optimal daily timings for your trip.</p>
+  <p class="empty-hint">Check the <strong>Agent Workflow</strong> tab to watch the live orchestration stream.</p>
 </div>

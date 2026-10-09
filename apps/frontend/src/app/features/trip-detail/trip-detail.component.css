@@ -227,6 +227,10 @@
   gap: 1.5rem;
 }
 
+.tab-content[hidden] {
+  display: none !important;
+}
+
 /* CTA Banner */
 .cta-banner {
   display: flex;
