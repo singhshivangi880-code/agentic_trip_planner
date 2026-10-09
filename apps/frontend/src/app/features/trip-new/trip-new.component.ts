@@ -56,11 +56,11 @@ export class TripNewComponent implements OnInit, AfterViewChecked {
   messages: ChatMessage[] = [
     {
       role: 'assistant',
-      content: `👋 **Welcome to your AI Travel Co-Pilot!**\n\nWhere are you dreaming of escaping to? Tell me your thoughts freely—where you're departing from, where you'd like to go, travel dates, or just the vibe you're imagining (e.g. *"I want to plan a 14-day trip to Japan from Pune, love street food, history, and photography"*).\n\nI will check location feasibility, flag any typos, and craft an authentic day-by-day plan with you.`,
+      content: `👋 **Welcome to your AI Travel Co-Pilot!**\n\nWhere are you dreaming of travelling to? Tell me your thoughts freely—where you'd like to go, how many days, where you're departing from, or the vibe you're imagining (e.g. *"5 days in United States"*, *"14 days in Japan"*, or *"7 days in Paris"*).\n\nI will check location feasibility, flag any typos, and craft an authentic day-by-day plan with you.`,
       suggestedReplies: [
-        '14 days in Japan from Pune',
-        '7 days in Paris & Rome from Mumbai',
-        '5 days relaxing in Bali',
+        '5 days in United States',
+        '14 days in Japan',
+        '7 days in Paris',
         'Test typo check (from "pube")'
       ]
     }
@@ -168,8 +168,8 @@ export class TripNewComponent implements OnInit, AfterViewChecked {
     const endDate = new Date(new Date(startDate).getTime() + (duration - 1) * 86400000).toISOString().split('T')[0];
 
     const payload: TripCreatePayload = {
-      origin: tripData.origin || 'Pune',
-      destination: tripData.destination,
+      origin: tripData.origin?.trim() || undefined,
+      destination: tripData.destination.trim(),
       duration_days: duration,
       start_date: startDate,
       end_date: endDate,

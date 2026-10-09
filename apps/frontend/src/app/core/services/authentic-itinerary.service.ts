@@ -20,7 +20,9 @@ export class AuthenticItineraryService {
 
     let dayPlans: { theme: string; area: string; items: ItineraryItem[] }[] = [];
 
-    if (destLower.includes('japan') || destLower.includes('tokyo') || destLower.includes('kyoto') || destLower.includes('osaka')) {
+    if (destLower.includes('united states') || destLower.includes('usa') || destLower.includes('america') || destLower.includes('new york') || destLower.includes('california')) {
+      dayPlans = this.getUSAPlans(params);
+    } else if (destLower.includes('japan') || destLower.includes('tokyo') || destLower.includes('kyoto') || destLower.includes('osaka')) {
       dayPlans = this.getJapanPlans(params);
     } else if (destLower.includes('france') || destLower.includes('paris')) {
       dayPlans = this.getParisPlans(params);
@@ -49,6 +51,60 @@ export class AuthenticItineraryService {
     }
 
     return { days };
+  }
+
+  private getUSAPlans(params: any): { theme: string; area: string; items: ItineraryItem[] }[] {
+    return [
+      {
+        theme: 'Arrival, Midtown Skyline & Broadway Night',
+        area: 'Midtown Manhattan, New York',
+        items: [
+          { title: 'JFK/Newark Airport Arrival & Hotel Check-in', item_type: 'Logistics', start_time: '14:00', end_time: '15:30', location: 'Midtown Manhattan', description: 'Arrive in NYC, transfer to hotel, and refresh.', is_locked: true },
+          { title: 'Central Park Walk & Fifth Avenue Architecture', item_type: 'Attraction', start_time: '16:00', end_time: '18:00', location: 'Central Park South', description: 'Stroll past Bethesda Terrace, the Bow Bridge, and iconic Fifth Avenue storefronts.', is_locked: false },
+          { title: 'Classic New York Dinner at Joe’s Pizza or Carmine’s', item_type: 'Dining', start_time: '18:30', end_time: '19:45', location: 'Times Square / Theater District', description: 'Authentic thin-crust New York slice or family-style Italian before the show.', is_locked: false },
+          { title: 'Broadway Musical Performance', item_type: 'Culture', start_time: '20:00', end_time: '22:30', location: 'Broadway Theater District', description: 'World-renowned theater production in the glowing heart of Manhattan.', is_locked: true }
+        ]
+      },
+      {
+        theme: 'Lady Liberty, Financial District & Brooklyn Bridge Sunset',
+        area: 'Lower Manhattan & DUMBO, New York',
+        items: [
+          { title: 'Statue of Liberty & Ellis Island Morning Ferry', item_type: 'Heritage', start_time: '09:00', end_time: '12:00', location: 'Battery Park', description: 'Cruise past the iconic symbol of freedom with breathtaking harbor views.', is_locked: true },
+          { title: 'Wall Street & 9/11 Memorial Reflecting Pools', item_type: 'Heritage', start_time: '12:30', end_time: '14:30', location: 'World Trade Center', description: 'Pay homage at the memorial pools and admire the soaring Oculus architecture.', is_locked: false },
+          { title: 'Sunset Pedestrian Walk Across Brooklyn Bridge', item_type: 'Activity', start_time: '16:00', end_time: '18:00', location: 'Brooklyn Bridge', description: 'Walk across the historic 1883 suspension bridge as golden hour lights up the Manhattan skyline.', is_locked: false },
+          { title: 'Dinner in DUMBO overlooking Manhattan Waterfront', item_type: 'Dining', start_time: '18:30', end_time: '21:00', location: 'DUMBO, Brooklyn', description: 'Artisanal dinner and craft cocktails with panoramic views of the illuminated bridges.', is_locked: false }
+        ]
+      },
+      {
+        theme: 'High Line Park, Chelsea Market & SoHo Style',
+        area: 'Chelsea, Meatpacking & SoHo, New York',
+        items: [
+          { title: 'The High Line Elevated Stroll & Hudson Yards', item_type: 'Nature', start_time: '09:30', end_time: '11:30', location: 'Chelsea / Meatpacking', description: 'Repurposed elevated freight rail line transformed into a lush urban botanical path.', is_locked: false },
+          { title: 'Chelsea Market Artisanal Food Crawl', item_type: 'Dining', start_time: '12:00', end_time: '14:00', location: 'Chelsea Market', description: 'Fresh Maine lobster rolls, artisanal tacos, and gourmet chocolate samples.', is_locked: false },
+          { title: 'SoHo Cast-Iron Architecture & Independent Boutiques', item_type: 'Activity', start_time: '14:30', end_time: '17:30', location: 'SoHo Historic District', description: 'Browse world-class art galleries, design studios, and historic cobblestone streets.', is_locked: false },
+          { title: 'Dinner at Balthazar or Minetta Tavern in Greenwich Village', item_type: 'Dining', start_time: '18:30', end_time: '21:00', location: 'Greenwich Village', description: 'Iconic French brasserie or legendary black label burgers in a historic literary haven.', is_locked: false }
+        ]
+      },
+      {
+        theme: 'Masterpiece Art & Summit Sky Observatory',
+        area: 'Museum Mile & Grand Central, New York',
+        items: [
+          { title: 'The Metropolitan Museum of Art (The Met)', item_type: 'Attraction', start_time: '09:30', end_time: '13:00', location: 'Museum Mile, Upper East Side', description: '5,000 years of global art, from Temple of Dendur to European Masters.', is_locked: true },
+          { title: 'Upper East Side Café Lunch & Madison Avenue Walk', item_type: 'Dining', start_time: '13:30', end_time: '15:00', location: 'Upper East Side', description: 'Relaxed bistro lunch and classic New York streetscape.', is_locked: false },
+          { title: 'Summit One Vanderbilt 360° Glass Observation', item_type: 'Experience', start_time: '16:00', end_time: '18:30', location: 'Grand Central', description: 'Multi-sensory mirror art installations and panoramic views looking down at the Empire State Building.', is_locked: true },
+          { title: 'Grand Central Oyster Bar or Flatiron Craft Dinner', item_type: 'Dining', start_time: '19:00', end_time: '21:30', location: 'Midtown East', description: 'Historic vaulted tiled dining hall serving fresh Atlantic oysters.', is_locked: false }
+        ]
+      },
+      {
+        theme: 'Greenwich Village Vibes & Washington Square Sunset',
+        area: 'West Village & Washington Square, New York',
+        items: [
+          { title: 'Washington Square Park & West Village Brownstones', item_type: 'Culture', start_time: '10:00', end_time: '12:30', location: 'Greenwich Village', description: 'Iconic marble memorial arch, street musicians, chess masters, and historic tree-lined avenues.', is_locked: false },
+          { title: 'Artisan Pastrami or Bagel Lunch at Katz’s Delicatessen', item_type: 'Dining', start_time: '13:00', end_time: '14:30', location: 'Lower East Side', description: 'Legendary hand-carved pastrami on rye served since 1888.', is_locked: false },
+          { title: 'Greenwich Village Jazz Club or Comedy Cellar Experience', item_type: 'Nightlife', start_time: '19:00', end_time: '22:00', location: 'MacDougal Street', description: 'Intimate subterranean venue featuring top global stand-up or live acoustic jazz.', is_locked: false }
+        ]
+      }
+    ];
   }
 
   private getJapanPlans(params: any): { theme: string; area: string; items: ItineraryItem[] }[] {

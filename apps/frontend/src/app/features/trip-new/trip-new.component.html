@@ -55,11 +55,11 @@
               <div class="card-grid">
                 <div class="field-group">
                   <label>🛫 Departure (Origin)</label>
-                  <input type="text" [(ngModel)]="msg.tripData.origin" placeholder="e.g. Pune, Mumbai">
+                  <input type="text" [(ngModel)]="msg.tripData.origin" placeholder="e.g. New York, London, Mumbai (Optional)">
                 </div>
                 <div class="field-group">
                   <label>🛬 Destination</label>
-                  <input type="text" [(ngModel)]="msg.tripData.destination" placeholder="e.g. Japan, Tokyo">
+                  <input type="text" [(ngModel)]="msg.tripData.destination" placeholder="e.g. United States, Paris, Japan">
                 </div>
                 <div class="field-group">
                   <label>⏱️ Duration</label>
@@ -141,14 +141,14 @@
     <!-- Suggested Starter Ideas (when conversation is fresh) -->
     <div class="starter-prompts" *ngIf="messages.length <= 2">
       <span class="starter-label">Try asking:</span>
-      <button class="starter-btn" (click)="sendUserMessage('I want to plan a 14-day trip to Japan from Pune, love ramen, culture, and anime')">
-        🗾 14-day Japan Trip from Pune
+      <button class="starter-btn" (click)="sendUserMessage('5 days in United States, love museums and skyline views')">
+        🗽 5 Days in United States
       </button>
-      <button class="starter-btn" (click)="sendUserMessage('Plan a 7-day culinary and art trip to Paris from Mumbai')">
-        🥐 7 Days in Paris from Mumbai
+      <button class="starter-btn" (click)="sendUserMessage('14-day trip to Japan, love ramen, culture, and anime')">
+        🗾 14 Days in Japan
       </button>
-      <button class="starter-btn" (click)="sendUserMessage('Plan a 10-day trip to Italy from Delhi visiting Rome, Florence and Venice')">
-        🏛️ 10 Days in Italy from Delhi
+      <button class="starter-btn" (click)="sendUserMessage('Plan a 7-day culinary and art trip to Paris')">
+        🥐 7 Days in Paris
       </button>
       <button class="starter-btn" (click)="sendUserMessage('I want to go to Japan from pube for 2 weeks')">
         ⚠️ Test Typo Validation ('pube' ➔ Pune)

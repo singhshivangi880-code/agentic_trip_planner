@@ -17,8 +17,8 @@ class GeminiClient:
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         self.client = genai.Client(api_key=self.api_key)
-        self.model_fast = os.environ.get("GEMINI_MODEL_FAST", "gemini-2.5-flash")
-        self.model_reasoning = os.environ.get("GEMINI_MODEL_REASONING", "gemini-2.5-pro")
+        self.model_fast = os.environ.get("GEMINI_MODEL_FAST", "gemini-flash-latest")
+        self.model_reasoning = os.environ.get("GEMINI_MODEL_REASONING", "gemini-3.8-flash")
 
     async def generate_structured(
         self,

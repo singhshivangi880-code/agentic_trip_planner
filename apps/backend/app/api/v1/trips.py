@@ -46,6 +46,7 @@ class TripResponse(BaseModel):
     duration_days: int
     status: str
     workflow_status: Optional[str] = None
+    preferences: Optional[dict] = None
     created_at: datetime
     updated_at: datetime
 
