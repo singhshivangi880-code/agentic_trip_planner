@@ -53,7 +53,9 @@ services:
       - trip-planner-net
 
   backend:
-    build: apps/backend
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
     ports:
       - "8000:8000"
     depends_on:
@@ -67,6 +69,8 @@ services:
       - DATABASE_URL=postgresql+psycopg2://user:password@postgres/tripplanner
       - REDIS_URL=redis://redis:6379/0
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OTLP_ENDPOINT=http://jaeger:4318/v1/traces
+      - JAEGER_API_URL=http://jaeger:16686/api
 
   frontend:
     build: apps/frontend

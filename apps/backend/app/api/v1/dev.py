@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, HTTPException, Depends
 import httpx
 from pydantic import BaseModel
@@ -6,7 +7,7 @@ from app.core.security import require_dev, rate_limit
 
 router = APIRouter(prefix="/dev", tags=["dev"])
 
-JAEGER_API_URL = "http://localhost:16686/api"
+JAEGER_API_URL = os.environ.get("JAEGER_API_URL", "http://jaeger:16686/api")
 
 @router.get("/traces/{trace_id}", dependencies=[Depends(require_dev), rate_limit(times=100, seconds=60)])
 async def get_trace(trace_id: str) -> Any:
